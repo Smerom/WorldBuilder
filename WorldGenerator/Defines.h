@@ -9,7 +9,10 @@
 #include <chrono>
 
 namespace WorldBuilder {
-    static const float float_epsilon = 0.00001;
+    
+    typedef double wb_float;
+    
+    static const wb_float float_epsilon = 0.00001;
     
 /*************** World Attributes ***************/
     struct WorldAttributes {
@@ -46,7 +49,7 @@ namespace WorldBuilder {
         TaskTracker erode;
         TaskTracker plateRemoval;
         
-        float timestepUsed;
+        wb_float timestepUsed;
     };
 }
 

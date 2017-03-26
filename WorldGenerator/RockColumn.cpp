@@ -5,14 +5,14 @@
 
 #include "RockColumn.hpp"
 
-#include <math.h>
+#include <cmath>
 
 namespace WorldBuilder {
     RockSegment combineSegments(RockSegment one, RockSegment two){
         RockSegment result;
         result.thickness = one.thickness + two.thickness;
-        if (fabsf(result.thickness) > float_epsilon) {
-            result.density = fabsf((one.density*one.thickness + two.density*two.thickness) / (result.thickness));
+        if (std::abs(result.thickness) > float_epsilon) {
+            result.density = std::abs((one.density*one.thickness + two.density*two.thickness) / (result.thickness));
         } else {
             result.thickness = 0;
             result.density = one.density;

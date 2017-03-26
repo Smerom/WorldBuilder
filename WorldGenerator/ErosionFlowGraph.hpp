@@ -8,6 +8,7 @@
 #define ErosionFlowGraph_hpp
 
 #include <vector>
+#include "Defines.h"
 
 namespace WorldBuilder {
     class FlowEdge;
@@ -20,8 +21,8 @@ namespace WorldBuilder {
     private:
         MaterialFlowNode* source;
         MaterialFlowNode* destination;
-        float weight;
-        float materialHeight;
+        wb_float weight;
+        wb_float materialHeight;
     };
     
     class MaterialFlowNode {
@@ -29,9 +30,9 @@ namespace WorldBuilder {
         std::vector<std::shared_ptr<FlowEdge>> outflowTargets;
         std::vector<std::shared_ptr<FlowEdge>> inflowTargets;
         bool touched;
-        float materialHeight;
-        float offsetHeight;
-        float suspendedMaterialHeight;
+        wb_float materialHeight;
+        wb_float offsetHeight;
+        wb_float suspendedMaterialHeight;
         
         //void touchConnectedSubgraph(); // for finding roots if I end up doing that
         void upTreeFlow();

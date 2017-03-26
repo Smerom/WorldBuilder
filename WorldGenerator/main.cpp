@@ -82,29 +82,29 @@ public:
             }
             
             api::SimulationInfo info;
-            for (std::vector<WorldBuilder::WorldCell>::const_iterator cell = runner.get_world()->get_cells().begin();
-                 cell != runner.get_world()->get_cells().end();
-                 cell++)
-            {
-                int_fast32_t activeIndex = runner.get_world()->activePlateIndexForCell(&*cell);
-                float elevation = cell->get_elevation(activeIndex);
-                //std::cout << elevation << std::endl;
-                if (elevation > 18000) {
-                    //std::cout << elevation << std::endl;
-                }
-                float sedimentHeight = 0;
-                if (activeIndex >=0){
-                    sedimentHeight = cell->get_surfaceCells()[activeIndex][0]->rock.sediment.thickness;
-                } else {
-                    sedimentHeight = cell->get_strandedSegment().thickness;
-                }
-                
-                uint_fast32_t plateIndex = runner.get_world()->activePlateIndexForCell(&*cell);
-                
-                info.add_elevations(elevation);
-                info.add_sediment(sedimentHeight);
-                info.add_plates(plateIndex);
-            }
+//            for (std::vector<WorldBuilder::WorldCell>::const_iterator cell = runner.get_world()->get_cells().begin();
+//                 cell != runner.get_world()->get_cells().end();
+//                 cell++)
+//            {
+//                int_fast32_t activeIndex = runner.get_world()->activePlateIndexForCell(&*cell);
+//                float elevation = cell->get_elevation(activeIndex);
+//                //std::cout << elevation << std::endl;
+//                if (elevation > 18000) {
+//                    //std::cout << elevation << std::endl;
+//                }
+//                float sedimentHeight = 0;
+//                if (activeIndex >=0){
+//                    sedimentHeight = cell->get_surfaceCells()[activeIndex][0]->rock.sediment.thickness;
+//                } else {
+//                    sedimentHeight = cell->get_strandedSegment().thickness;
+//                }
+//                
+//                uint_fast32_t plateIndex = runner.get_world()->activePlateIndexForCell(&*cell);
+//                
+//                info.add_elevations(elevation);
+//                info.add_sediment(sedimentHeight);
+//                info.add_plates(plateIndex);
+//            }
             
             info.set_age(runner.get_world()->get_age());
             open = stream->Write(info);

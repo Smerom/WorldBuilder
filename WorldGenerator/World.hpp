@@ -7,44 +7,47 @@
 #ifndef World_hpp
 #define World_hpp
 
-#include <vector>
+#include <unordered_map>
 
 #include "RockColumn.hpp"
 #include "Plate.hpp"
 #include "Random.hpp"
 #include "Defines.h"
-#include "WorldCell.hpp"
 #include "MomentumTracker.hpp"
 #include "ErosionFlowGraph.hpp"
 
 namespace WorldBuilder {
-/*************** Base World ***************/
-/*  Responsible for running the world forward through time
- *  This base implements common functions such as erosion and plate movement
- *  All modifications after initial generation should be done within this class,
- *  only leaving basic housekeeping to plate and cell classes
- */
+    /*************** Base World ***************/
+    /*  Responsible for running the world forward through time
+     *  This base implements common functions such as erosion and plate movement
+     *  All modifications after initial generation should be done within this class,
+     *  only leaving basic housekeeping to plate and cell classes
+     */
     class World {
     private:
         std::unique_ptr<Grid> worldGrid;
-        std::vector<std::shared_ptr<Plate>> plates;
-        std::vector<WorldCell> cells;
         std::shared_ptr<Random> randomSource;
+        
+        std::unordered_map<uint32_t, std::shared_ptr<Plate>> plates;
+        uint32_t _nextPlateId;
+        uint32_t nextPlateId() {
+            return _nextPlateId++;
+        }
         
         RockColumn divergentOceanicColumn;
         WorldAttributes attributes;
         
-        float cellSmallAngle;
+        wb_float cellSmallAngle;
         
-        float age;
+        wb_float age;
         
-        float supercontinentCycleStartAge;
-        float supercontinentCycleDuration;
-        uint_fast32_t desiredPlateCount;
+        wb_float supercontinentCycleStartAge;
+        wb_float supercontinentCycleDuration;
+        uint32_t desiredPlateCount;
         
-        AngularMomentumTracker *momentumTransfer;
+        //AngularMomentumTracker *momentumTransfer;
         
-        float cellDistanceMeters;
+        wb_float cellDistanceMeters;
         
         //std::vector<std::shared_ptr<Plate>> deletedPlates; // TODO, find out why plates deleted from supercontinent break things
         void deletePlate(std::shared_ptr<Plate> plateToRemove);
@@ -52,42 +55,62 @@ namespace WorldBuilder {
     public:
         // takes ownership of the grid
         World(Grid* theWorldGrid, std::shared_ptr<Random> randomSource);
+        WorldUpdateTask progressByTimestep(wb_float minTimestep);
+        wb_float randomPlateDensityOffset();
         
-        WorldUpdateTask progressByTimestep(float minTimestep);
         
-        float randomPlateDensityOffset();
         
-    /*************** Casting ***************/
-        WorldCell* getNearestWorldCell(Vec3 absoluteCellPosition, WorldCell* startCellHint);
-        void castPlateCellsToWorld();
         
-    /*************** Homeostasis ***************/
-        void homeostasis(float timestep);
+        /*************** Movement ***************/
+        void columnMovementPhase(wb_float timestep);
         
-    /*************** Plate Movement ***************/
-        void movePlates(float timestep);
+        void balanceInternalPlateForce(std::shared_ptr<PlateCell>, wb_float timestep);
+        
+        void movePlates(wb_float timestep);
+        
+        /*************** Movement Aux ***************/
         float randomPlateSpeed();
         
-    /*************** Collision ***************/
-        virtual void collision(float timestep);
-        int_fast32_t activePlateIndexForCell(const WorldCell* cell);
         
-    /*************** Erosion ***************/
-        void patch();
-        std::unique_ptr<MaterialFlowGraph> createFlowGraph();
-        void erode(float timestep);
         
-    /*************** Supercontinent Cycle ***************/
+        
+        
+        /*************** Transistion ***************/
+        void transitionPhase(wb_float timestep);
+        
+        void updatePlateEdges(std::shared_ptr<Plate> plate);
+        void knitPlates(std::shared_ptr<Plate> targetPlate);
+        
+        void renormalizeAllPlates();
+        void renormalizePlate(std::shared_ptr<Plate> thePlate);
+        
+        void homeostasis(wb_float timestep);
         void supercontinentCycle();
+        
+        /*************** Transistion Aux ***************/
         std::pair<std::shared_ptr<Plate>, std::shared_ptr<Plate>> splitPlate(std::shared_ptr<Plate> plateToSplit);
         std::tuple<Vec3, Vec3, Vec3> getSplitPoints(std::shared_ptr<Plate> plate);
         const GridVertex* getRandomContinentalVertex(std::shared_ptr<Plate> plateToSplit);
         
-    /*************** Getters ***************/
-        const std::vector<WorldCell>& get_cells() {
-            return this->cells;
-        }
-        const std::vector<std::shared_ptr<Plate>>& get_plates() {
+        uint32_t getNearestGridIndex(Vec3 location, uint32_t hint);
+        
+        
+        
+        
+        
+        
+        /*************** Modification ***************/
+        void columnModificationPhase();
+        
+        void erodeThermalSmothing(wb_float timestep);
+        void erodeSedimentTransport(wb_float timestep);
+        
+        /*************** Modification Aux ***************/
+        void createFlowGraph();
+        
+        
+        /*************** Getters ***************/
+        const std::unordered_map<uint32_t, std::shared_ptr<Plate>>& get_plates() {
             return this->plates;
         }
         RockColumn get_divergentOceanicColumn() {

@@ -91,7 +91,7 @@ namespace WorldBuilder {
         }
     }
     
-    PlateCell::PlateCell() : bIsSubducted(false), vertex(nullptr), lastNearest(nullptr) {
+    PlateCell::PlateCell(const GridVertex *ourVertex) : bIsSubducted(false), vertex(ourVertex), edgeInfo(nullptr), displacement(nullptr) {
         // valid (if not realistic) rock values;
         this->rock.sediment.thickness = 0;
         this->rock.sediment.density = 1;

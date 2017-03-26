@@ -11,10 +11,10 @@
 namespace WorldBuilder {
     // section of rock with specific properties
     struct RockSegment {
-        float density;
-        float thickness;
+        wb_float density;
+        wb_float thickness;
         
-        float mass() const {
+        wb_float mass() const {
             return density*thickness;
         }
     };
@@ -26,10 +26,10 @@ namespace WorldBuilder {
         RockSegment oceanic;
         RockSegment root;
         
-        float mass() const{
+        wb_float mass() const{
             return sediment.mass() + continental.mass() + oceanic.mass() + root.mass();
         }
-        float thickness() const {
+        wb_float thickness() const {
             return sediment.thickness + continental.thickness + oceanic.thickness + root.thickness;
         }
         bool isEmpty() const{

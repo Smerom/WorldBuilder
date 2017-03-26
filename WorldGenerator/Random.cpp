@@ -23,14 +23,14 @@ namespace WorldBuilder {
         Vec3 vector;
         
         // for smaller
-        float a, b, c;
-        float x, y, z;
+        wb_float a, b, c;
+        wb_float x, y, z;
         a = pole.coords[0];
         b = pole.coords[1];
         c = pole.coords[2];
         
         // get point along great circle (perp to pole)
-        std::normal_distribution<float> normalDist(0.0f, 1.0f);
+        std::normal_distribution<wb_float> normalDist(0.0f, 1.0f);
         if (pole.coords[2] != 0) {
             x = normalDist(this->randomSource);
             y = normalDist(this->randomSource);
@@ -53,14 +53,14 @@ namespace WorldBuilder {
         vector.coords[1] = y;
         vector.coords[2] = z;
         // rotate about pole by a random angle
-        std::uniform_real_distribution<float> uniformDist(0.0f, 1.0f);
+        std::uniform_real_distribution<wb_float> uniformDist(0.0f, 1.0f);
         Matrix3x3 rotation = math::rotationMatrixAboutAxis(pole, uniformDist(this->randomSource) * 2 * M_PI);
         
         return math::normalize3Vector(math::affineRotaionMulVec(rotation, vector));
     }
     
-    float Random::randomNormal(float mean, float stdev){
-        std::normal_distribution<float> normalDist(mean, stdev);
+    wb_float Random::randomNormal(wb_float mean, wb_float stdev){
+        std::normal_distribution<wb_float> normalDist(mean, stdev);
         return normalDist(this->randomSource);
     }
     uint_fast32_t Random::randomUniform(uint_fast32_t min, uint_fast32_t max){

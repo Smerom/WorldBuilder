@@ -13,7 +13,7 @@ namespace WorldBuilder {
             this->touched = true;
             
             // flow up
-            float suspendedMaterial = 0;
+            wb_float suspendedMaterial = 0;
             for (std::vector<std::shared_ptr<FlowEdge>>::iterator flowEdge = this->inflowTargets.begin();
                  flowEdge != this->inflowTargets.end();
                  flowEdge++)
@@ -27,7 +27,7 @@ namespace WorldBuilder {
             // TODO, dynamic sealevel
             if (this->offsetHeight + this->materialHeight < 9620 - 300) {
                 //
-                float fillAmount = 9620 - 300 - (this->offsetHeight + this->materialHeight);
+                wb_float fillAmount = 9620 - 300 - (this->offsetHeight + this->materialHeight);
                 if (fillAmount > suspendedMaterial) {
                     fillAmount = suspendedMaterial;
                 }
@@ -39,7 +39,7 @@ namespace WorldBuilder {
             suspendedMaterial += this->suspendedMaterialHeight;
             
             // move material
-            float totalMaterialMoved = 0;
+            wb_float totalMaterialMoved = 0;
             for (std::vector<std::shared_ptr<FlowEdge>>::iterator flowEdge = this->outflowTargets.begin();
                  flowEdge != this->outflowTargets.end();
                  flowEdge++)

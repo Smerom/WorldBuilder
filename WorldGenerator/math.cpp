@@ -12,9 +12,9 @@
 namespace WorldBuilder {
     namespace math {
         
-        float distanceFromPole(const Vec3 position, const Vec3 pole){
-            float x = position[0]*pole[0] + position[1]*pole[1] + position[2]*pole[2];
-            float xSquared = x*x;
+        wb_float distanceFromPole(const Vec3 position, const Vec3 pole){
+            wb_float x = position[0]*pole[0] + position[1]*pole[1] + position[2]*pole[2];
+            wb_float xSquared = x*x;
             if (xSquared > 1 || isnan(xSquared)){
                 //std::cout << "Distance from pole faliure" << std::endl;
                 return 0;
@@ -23,8 +23,8 @@ namespace WorldBuilder {
             return sqrtf(1 - xSquared);
         }
         
-        float squareDistanceBetween3Points(const Vec3 point1, const Vec3 point2){
-            float x, y, z;
+        wb_float squareDistanceBetween3Points(const Vec3 point1, const Vec3 point2){
+            wb_float x, y, z;
             x = point1[0] - point2[0];
             y = point1[1] - point2[1];
             z = point1[2] - point2[2];
@@ -32,8 +32,8 @@ namespace WorldBuilder {
             return x*x + y*y + z*z;
         };
         
-        float distanceBetween3Points(const Vec3 point1, const Vec3 point2){
-            float x, y, z;
+        wb_float distanceBetween3Points(const Vec3 point1, const Vec3 point2){
+            wb_float x, y, z;
             x = point1[0] - point2[0];
             y = point1[1] - point2[1];
             z = point1[2] - point2[2];
@@ -42,7 +42,7 @@ namespace WorldBuilder {
         };
         
         Vec3 normalize3Vector(Vec3 vector){
-            float scale = sqrtf(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
+            wb_float scale = sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
             if (scale * scale < float_epsilon){
                 // TODO do something!
             }
@@ -53,9 +53,9 @@ namespace WorldBuilder {
             
             return result;
         }; // normalize3Vector
-        std::pair<Vec3, float> normalize3VectorWithScale(Vec3 vector){
-            std::pair<Vec3, float> result;
-            float scale = sqrtf(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
+        std::pair<Vec3, wb_float> normalize3VectorWithScale(Vec3 vector){
+            std::pair<Vec3, wb_float> result;
+            wb_float scale = sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
             if (scale * scale < float_epsilon){
                 result.second = 0;
                 return result;
@@ -67,6 +67,10 @@ namespace WorldBuilder {
             result.second = scale;
             
             return result;
+        }
+        
+        wb_float angleBetweenUnitVectors(const Vec3 vector1, const Vec3 vector2){
+            return acos(vector1.dot(vector2));
         }
         
         
@@ -84,11 +88,11 @@ namespace WorldBuilder {
             return matrix;
         }
         
-        Matrix3x3 rotationMatrixAboutAxis(Vec3 axis, float angleRadians){
+        Matrix3x3 rotationMatrixAboutAxis(Vec3 axis, wb_float angleRadians){
             Vec3 normalizedAxis = normalize3Vector(axis);
             
             // for clarity
-            float ux, uy, uz;
+            wb_float ux, uy, uz;
             ux = normalizedAxis.coords[0];
             uy = normalizedAxis.coords[1];
             uz = normalizedAxis.coords[2];
@@ -97,7 +101,7 @@ namespace WorldBuilder {
             
             Matrix3x3 rotationMatrix;
             
-            float cosTheta, sinTheta;
+            wb_float cosTheta, sinTheta;
             cosTheta = cos(angleRadians);
             sinTheta = sin(angleRadians);
             // set 0, 0
@@ -136,6 +140,14 @@ namespace WorldBuilder {
             return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
         }
         
+        Matrix3x3 transpose(Matrix3x3 a){
+            Matrix3x3 result;
+            result.rows[0] = a.column(0);
+            result.rows[1] = a.column(1);
+            result.rows[2] = a.column(2);
+            return result;
+        }
+        
         Matrix3x3 matrixMul(Matrix3x3 a, Matrix3x3 b){
             Matrix3x3 result;
             result.rows[0].coords[0] = vectorMul(a[0], b.column(0));
@@ -150,5 +162,12 @@ namespace WorldBuilder {
             return result;
         }
         
+        
+        wb_float circleIntersectionArea(wb_float distance, wb_float radius){
+            if (distance > 2*radius) {
+                return 0;
+            }
+            return 2*radius*radius*acos(distance/(2*radius)) - 1/2 * distance * sqrt(4*radius*radius - distance*distance);
+        }
     }
 }

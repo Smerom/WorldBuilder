@@ -6,12 +6,35 @@
 #ifndef PlateCell_hpp
 #define PlateCell_hpp
 
+#include <map>
+
 #include "RockColumn.hpp"
 #include "Grid.hpp"
 #include "Defines.h"
-#include "WorldCell.hpp"
+#include "ErosionFlowGraph.hpp"
 
 namespace WorldBuilder {
+    
+    class PlateCell;
+    /***************  Edge Cell Info ***************/
+    /*
+     *
+     *
+     *
+     */
+    class EdgeCellInfo {
+    public:
+        std::map<uint64_t, wb_float> otherPlateNeighbors; // lower 32 bits are cell index, higher are plate index
+        std::map<uint32_t, uint32_t> otherPlateLastNearest; // plate -> cell index
+    };
+    
+    class DisplacementInfo {
+    public:
+        Vec3 displacementLocation;
+        RockColumn displacedRock;
+        std::shared_ptr<PlateCell> deleteTarget;
+    };
+    
     /***************  Plate Cell ***************/
     /*  Represents a cell in plate space
      *  Used for tracking rock
@@ -24,15 +47,20 @@ namespace WorldBuilder {
         friend class Plate;
         friend class AngularMomentumTracker;
     private:
-        float baseOffset;
+        wb_float baseOffset;
         bool bIsSubducted;
-        float poleRadius;
+        wb_float poleRadius;
     public:
         RockColumn rock;
         const GridVertex* vertex;
-        WorldCell* lastNearest;
         
-        PlateCell();
+        std::shared_ptr<EdgeCellInfo> edgeInfo; // shared with edge list
+        std::shared_ptr<DisplacementInfo> displacement;
+        
+        std::shared_ptr<MaterialFlowNode> flowNode;
+        
+        
+        PlateCell(const GridVertex* vertex);
         
         void homeostasis(const WorldAttributes, float timestep);
         

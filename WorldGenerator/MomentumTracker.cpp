@@ -12,7 +12,7 @@
 
 namespace WorldBuilder {
 /**************** Commit Transfer ****************/
-    static float frictionCoeff = 0.01;
+    static wb_float frictionCoeff = 0.01;
     
     bool badTransfer(Vec3 transfer){
         return (isnan(transfer[0]) ||
@@ -60,8 +60,8 @@ namespace WorldBuilder {
                     this->colidedSurfaceCellCount[i+j*this->plateCount] > this->startingSurfaceCellCount[j]) {
                     std::cout << "More collided cells than started with!" << std::endl;
                 }
-                float collisionFractionI = this->colidedSurfaceCellCount[i+j*this->plateCount] / this->startingSurfaceCellCount[i];
-                float collisionFractionJ = this->colidedSurfaceCellCount[i+j*this->plateCount] / this->startingSurfaceCellCount[j];
+                wb_float collisionFractionI = this->colidedSurfaceCellCount[i+j*this->plateCount] / this->startingSurfaceCellCount[i];
+                wb_float collisionFractionJ = this->colidedSurfaceCellCount[i+j*this->plateCount] / this->startingSurfaceCellCount[j];
                 
                 // to i we are subtracting a portion of i and adding a portion of j
                 Vec3 transferPole = this->plates[j]->pole*(frictionCoeff*this->startingMomentumMagnitude[i]*collisionFractionI) -
@@ -85,11 +85,12 @@ namespace WorldBuilder {
         
         // calculate new poles
         size_t index = 0;
-        for (std::vector<std::shared_ptr<Plate>>::iterator plate = this->plates.begin();
-             plate != this->plates.end();
-             plate++, index ++)
+        for (auto plateIt = this->plates.begin();
+             plateIt != this->plates.end();
+             plateIt++, index ++)
         {
-            float newMagnitude;
+            std::shared_ptr<Plate> plate = plateIt->second;
+            wb_float newMagnitude;
             Vec3 newPole;
             std::tie(newPole, newMagnitude) = math::normalize3VectorWithScale(newMomentumPoles[index]);
             if (newMagnitude == 0 || isnan(newMagnitude)) {
@@ -98,23 +99,24 @@ namespace WorldBuilder {
                 std::printf("New Momentum Pole: (%f, %f, %f)\n", newMomentumPoles[index][0], newMomentumPoles[index][1], newMomentumPoles[index][2]);
                 std::printf("Plate Index: %lu\n", index);
             }
-            (*plate)->pole = newPole;
+            plate->pole = newPole;
             
             // update cell radii with new pole
-            (*plate)->updateCellRadii();
+            plate->updateCellRadii();
             
-            float poleChangeMomentumMagnitude = 0;
-            for (std::vector<PlateCell>::iterator cell = (*plate)->cells.begin();
-                 cell != (*plate)->cells.end();
-                 cell++)
+            wb_float poleChangeMomentumMagnitude = 0;
+            for (auto cellIt = plate->cells.begin();
+                 cellIt != plate->cells.end();
+                 cellIt++)
             {
+                std::shared_ptr<PlateCell> cell = cellIt->second;
                 // TODO may be able to get rid of angular speed multiplication here if we don't scale by it just below
-                poleChangeMomentumMagnitude += cell->poleRadius * cell->rock.mass() * (*plate)->angularSpeed;
+                poleChangeMomentumMagnitude += cell->poleRadius * cell->rock.mass() * plate->angularSpeed;
             }
             
-            (*plate)->angularSpeed = (*plate)->angularSpeed * newMagnitude / poleChangeMomentumMagnitude;
+            plate->angularSpeed = plate->angularSpeed * newMagnitude / poleChangeMomentumMagnitude;
             
-            if ((*plate)->angularSpeed <= 0 || isnan((*plate)->angularSpeed)) {
+            if (plate->angularSpeed <= 0 || isnan(plate->angularSpeed)) {
                 std::cout << "Plate has invalid angular speed after momentum change" << std::endl;
             }
         }
@@ -124,11 +126,11 @@ namespace WorldBuilder {
     
     
 /**************** Modifiers ****************/
-    void AngularMomentumTracker::transferMomentumMagnitude(size_t source, size_t destination, float magnitude){
+    void AngularMomentumTracker::transferMomentumMagnitude(size_t source, size_t destination, wb_float magnitude){
         this->momentumDeltaMagnitude[source+this->plateCount*destination] += magnitude;
     }
     
-    void AngularMomentumTracker::removeMomentumFromPlate(size_t plateIndex, float magnitude){
+    void AngularMomentumTracker::removeMomentumFromPlate(size_t plateIndex, wb_float magnitude){
         this->startingMomentumMagnitude[plateIndex] -= magnitude;
     }
     
@@ -146,39 +148,42 @@ namespace WorldBuilder {
     }
     
 /**************** Constructors ****************/
-    AngularMomentumTracker::AngularMomentumTracker(std::vector<std::shared_ptr<Plate>> iPlates){
+    AngularMomentumTracker::AngularMomentumTracker(std::unordered_map<uint32_t, std::shared_ptr<Plate>> iPlates){
+        throw "Broken class, needs update for use with hash maps";
         this->plates = iPlates;
         plateCount = plates.size();
         // allocate a bunch of arrays
-        this->startingMomentumMagnitude = (float*)calloc(plateCount, sizeof(float));
-        this->momentumDeltaMagnitude = (float*)calloc(plateCount*plateCount, sizeof(float));
+        this->startingMomentumMagnitude = (wb_float*)calloc(plateCount, sizeof(wb_float));
+        this->momentumDeltaMagnitude = (wb_float*)calloc(plateCount*plateCount, sizeof(wb_float));
         this->startingSurfaceCellCount = (size_t*)calloc(plateCount, sizeof(size_t));
         this->colidedSurfaceCellCount = (size_t*)calloc(plateCount*plateCount, sizeof(size_t));
         
         // calculate starting angular momentum
         // calculate starting surface cell count
         size_t index = 0;
-        for (std::vector<std::shared_ptr<Plate>>::iterator plate = plates.begin();
-             plate != plates.end();
-             plate++, index++)
+        for (auto plateIt = plates.begin();
+             plateIt != plates.end();
+             plateIt++, index++)
         {
+            std::shared_ptr<Plate> plate = plateIt->second;
             // update cell radii for momentum calculations
-            (*plate)->updateCellRadii();
-            float momentumMagnitude = 0;
+            plate->updateCellRadii();
+            wb_float momentumMagnitude = 0;
             size_t surfaceCount = 0;
-            for (std::vector<PlateCell>::iterator cell = (*plate)->cells.begin();
-                 cell != (*plate)->cells.end();
-                 cell++)
+            for (auto cellIt = plate->cells.begin();
+                 cellIt != plate->cells.end();
+                 cellIt++)
             {
+                std::shared_ptr<PlateCell> cell = cellIt->second;
                 // only surface cells???
                 if (cell->rock.isEmpty() == false) {
-                    float mag = cell->poleRadius * cell->rock.mass() * (*plate)->angularSpeed;
+                    wb_float mag = cell->poleRadius * cell->rock.mass() * plate->angularSpeed;
                     if (isnan(mag) || isinf(mag)) {
                         //std::printf("Bad cell!");
                         throw "Bad cell!";
                     }
                     
-                    momentumMagnitude += cell->poleRadius * cell->rock.mass() * (*plate)->angularSpeed;
+                    momentumMagnitude += cell->poleRadius * cell->rock.mass() * plate->angularSpeed;
                     // check surface cell
                     if (cell->isSubducted() == false) {
                         surfaceCount++;
