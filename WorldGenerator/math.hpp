@@ -9,14 +9,21 @@
 
 #include <cstddef>
 #include <utility>
+#include <cmath>
 #include "Defines.h"
 
 namespace WorldBuilder {
     struct Vec3{
         wb_float coords[3];
         
+        Vec3(){
+            coords[0] = 0;
+            coords[1] = 0;
+            coords[2] = 0;
+        }
+        
         wb_float operator[](std::size_t idx) const { return coords[idx];}
-        Vec3 operator*(float scaler) const {
+        Vec3 operator*(wb_float scaler) const {
             Vec3 result;
             result.coords[0] = this->coords[0]*scaler;
             result.coords[1] = this->coords[1]*scaler;
@@ -39,6 +46,18 @@ namespace WorldBuilder {
         }
         wb_float dot(Vec3 otherVector) const {
             return (this->coords[0]*otherVector[0] + this->coords[1]*otherVector[1] + this->coords[2]*otherVector[2]);
+        }
+        
+        Vec3 cross(Vec3 otherVector) const {
+            Vec3 result;
+            result.coords[0] = this->coords[1]*otherVector.coords[2] - this->coords[2]*otherVector.coords[1];
+            result.coords[1] = this->coords[2]*otherVector.coords[0] - this->coords[0]*otherVector.coords[2];
+            result.coords[2] = this->coords[0]*otherVector.coords[1] - this->coords[1]*otherVector.coords[2];
+            return result;
+        }
+        
+        wb_float length() const {
+            return sqrt(this->coords[0]*this->coords[0] + this->coords[1]*this->coords[1] + this->coords[2]*this->coords[2]);
         }
         
     };
@@ -73,7 +92,13 @@ namespace WorldBuilder {
         
         Vec3 affineRotaionMulVec(const Matrix3x3 rotationTransform, const Vec3 vector);
         
-        wb_float circleIntersectionArea(wb_float distance, wb_float radius);    }
+        wb_float circleIntersectionArea(wb_float distance, wb_float radius);
+        
+        // returns the intercept point, numver of |v| between a and intercept, and whether or not the intercept lies between p and q (otherwise its on on side or the other)
+        std::tuple<Vec3, wb_float, bool> edgeIntersection(Vec3 p, Vec3 q, Vec3 a, Vec3 v);
+        
+        std::tuple<Vec3, wb_float, bool, uint8_t> triangleIntersection(Vec3 p, Vec3 q, Vec3 r, Vec3 a, Vec3 v, bool checkPQ);
+    }
 }
 
 #endif /* math_hpp */

@@ -25,10 +25,10 @@ namespace WorldBuilder {
                 float distance = math::distanceBetween3Points(randomPoint, cell->get_vertex()->get_vector());
                 if (distance < landRadius) {
                     // basic land column
-                    cell->rock.continental.density = 2700;
-                    cell->rock.continental.thickness = 15000 + 10000*(landRadius-distance)/landRadius;
-                    cell->rock.root.density = 3200;
-                    cell->rock.root.thickness = 135000;
+                    cell->rock.continental.set_density(2700);
+                    cell->rock.continental.set_thickness(15000 + 10000*(landRadius-distance)/landRadius);
+                    cell->rock.root.set_density(3200);
+                    cell->rock.root.set_thickness(135000);
                 } else {
                     // create the world default column for newly divergent ocean crust
                     cell->rock = theWorld->get_divergentOceanicColumn();

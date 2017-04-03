@@ -48,4 +48,15 @@ namespace WorldBuilder {
             }
         }
     }
+    
+    void Grid::buildCenters() {
+        for (auto vertexIt = this->verts.begin(); vertexIt != this->verts.end(); vertexIt++) {
+            Vec3 center;
+            for (auto neighborIt = vertexIt->neighbors.begin(); neighborIt != vertexIt->neighbors.end(); neighborIt++) {
+                center = center + (*neighborIt)->get_vector();
+            }
+            center = math::normalize3Vector(center);
+            vertexIt->neighborCenter = center;
+        }
+    }
 }

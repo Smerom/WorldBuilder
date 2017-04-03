@@ -169,5 +169,98 @@ namespace WorldBuilder {
             }
             return 2*radius*radius*acos(distance/(2*radius)) - 1/2 * distance * sqrt(4*radius*radius - distance*distance);
         }
+        
+        std::tuple<Vec3, wb_float, bool> edgeIntersection(Vec3 p, Vec3 q, Vec3 a, Vec3 v) {
+            Vec3 n = a-p;
+            auto normScaleX = normalize3VectorWithScale(q - p);
+            wb_float xNormFactor = normScaleX.second;
+            Vec3 x = normScaleX.first;
+            
+            wb_float mMag = n.dot(x);
+            Vec3 m = x*mMag;
+            
+            Vec3 l = n - m;
+            Vec3 y = normalize3Vector(l);
+            
+            Vec3 vPrime = v - (x.cross(y) * v.dot(x.cross(y)));
+            
+            wb_float a2[2], vPrime2[2];
+            
+            a2[0] = a.dot(x);
+            a2[1] = a.dot(y);
+            vPrime2[0] = vPrime.dot(x);
+            vPrime2[1] = vPrime.dot(y);
+            
+            // find x intercept in 3 space
+            wb_float xIntercept = xNormFactor * (a2[0] - a2[1]*vPrime2[0]/vPrime2[1]);
+            Vec3 xInterceptPoint = p + (q - p) * xIntercept;
+            bool isBetween = (xIntercept > 0 && xIntercept < 1);
+            wb_float vCount = -1 * a2[1] / vPrime2[1]; // if v'[1] is negative, it points towards the edge, return positive v lenghts
+            
+            return std::make_tuple(xInterceptPoint, vCount, isBetween);
+        }
+        
+        std::tuple<Vec3, wb_float, bool, uint8_t> triangleIntersection(Vec3 p, Vec3 q, Vec3 r, Vec3 a, Vec3 v, bool checkPQ) {
+            // find Z
+            Vec3 z = normalize3Vector((q-p).cross(r-p));
+            
+            // move a into plane such that it stays in the triangle
+            a = a * (p.dot(z) / a.dot(z));
+            
+            // subtract z from v to get v' in the plane
+            Vec3 vPrime = v - z*(v.dot(z));
+            
+            // get our second axis
+            Vec3 y = normalize3Vector(vPrime);
+            
+            // get our third axis
+            Vec3 x = y.cross(z);
+            
+            // find the x and y coords for each vector of interest, with the origin moved to a
+            wb_float pPrime[2], qPrime[2], rPrime[2], aPrime[2];
+            aPrime[0] = a.dot(x);
+            aPrime[1] = a.dot(y);
+            
+            pPrime[0] = p.dot(x) - aPrime[0];
+            pPrime[1] = p.dot(y) - aPrime[1];
+            
+            qPrime[0] = q.dot(x) - aPrime[0];
+            qPrime[1] = q.dot(y) - aPrime[1];
+            
+            rPrime[0] = r.dot(x) - aPrime[0];
+            rPrime[1] = r.dot(y) - aPrime[1];
+            
+            wb_float intercept = 0;
+            wb_float vPrimeLengths = 0;
+            bool validIntersection = false;
+            uint8_t between = 0;
+            Vec3 intersectionPoint;
+
+            // since a is assumed to be inside the triangle, only one pair can both span the y axis and have at least one point above it
+            
+            // p - r
+            if (((pPrime[0] < 0 && rPrime[0] > 0) || (pPrime[0] > 0 && rPrime[0] < 0)) && (pPrime[1] > 0 || rPrime[1] > 0)) {
+                intercept = rPrime[1] - rPrime[0]*(rPrime[1] - pPrime[1])/(rPrime[0] - pPrime[0]);
+                vPrimeLengths = intercept / vPrime.length();
+                between = 1 << 1;
+                validIntersection = true;
+                intersectionPoint = p + (r - p) * (pPrime[0]/(pPrime[0] - rPrime[0]));
+            } else if (((qPrime[0] < 0 && rPrime[0] > 0) || (qPrime[0] > 0 && rPrime[0] < 0)) && (qPrime[1] > 0 || rPrime[1] > 0)) { // q - r
+                intercept = rPrime[1] - rPrime[0]*(rPrime[1] - qPrime[1])/(rPrime[0] - qPrime[0]);
+                vPrimeLengths = intercept / vPrime.length();
+                between = 1 << 2;
+                validIntersection = true;
+                intersectionPoint = q + (r - q) * (qPrime[0]/(qPrime[0] - rPrime[0]));
+            } else if (checkPQ) { // p - q
+                if (((pPrime[0] < 0 && qPrime[0] > 0) || (pPrime[0] > 0 && qPrime[0] < 0)) && (pPrime[1] > 0 || qPrime[1] > 0)) {
+                    intercept = qPrime[1] - qPrime[0]*(qPrime[1] - pPrime[1])/(qPrime[0] - pPrime[0]);
+                    vPrimeLengths = intercept / vPrime.length();
+                    between = 1 << 0;
+                    validIntersection = true;
+                    intersectionPoint = p + (q - p) * (pPrime[0]/(pPrime[0] - qPrime[0]));
+                }
+            }
+            return std::make_tuple(intersectionPoint, vPrimeLengths, validIntersection, between);
+        }
     }
 }

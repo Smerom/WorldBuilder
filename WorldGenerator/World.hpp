@@ -25,7 +25,7 @@ namespace WorldBuilder {
      */
     class World {
     private:
-        std::unique_ptr<Grid> worldGrid;
+        std::shared_ptr<Grid> worldGrid;
         std::shared_ptr<Random> randomSource;
         
         std::unordered_map<uint32_t, std::shared_ptr<Plate>> plates;
@@ -64,16 +64,18 @@ namespace WorldBuilder {
         /*************** Movement ***************/
         void columnMovementPhase(wb_float timestep);
         
-        void balanceInternalPlateForce(std::shared_ptr<PlateCell>, wb_float timestep);
+        void balanceInternalPlateForce(std::shared_ptr<Plate> plate, wb_float timestep);
+        
+        void computeEdgeInteraction(wb_float timestep);
         
         void movePlates(wb_float timestep);
         
         /*************** Movement Aux ***************/
-        float randomPlateSpeed();
+        wb_float randomPlateSpeed();
         
         
         
-        
+        void clean();
         
         /*************** Transistion ***************/
         void transitionPhase(wb_float timestep);
@@ -100,13 +102,13 @@ namespace WorldBuilder {
         
         
         /*************** Modification ***************/
-        void columnModificationPhase();
+        void columnModificationPhase(wb_float timestep);
         
-        void erodeThermalSmothing(wb_float timestep);
+        void erodeThermalSmoothing(wb_float timestep);
         void erodeSedimentTransport(wb_float timestep);
         
         /*************** Modification Aux ***************/
-        void createFlowGraph();
+        std::shared_ptr<MaterialFlowGraph> createFlowGraph();
         
         
         /*************** Getters ***************/
@@ -117,16 +119,18 @@ namespace WorldBuilder {
             return this->divergentOceanicColumn;
         }
         
-        float get_age() const {
+        wb_float get_age() const {
             return this->age;
         }
         
         WorldAttributes get_attributes() const {
             return this->attributes;
         }
-        float get_cellDistanceMeters() const {
+        wb_float get_cellDistanceMeters() const {
             return this->cellDistanceMeters;
         }
+        
+        wb_float get_elevation(Vec3 location);
         
     }; // class World
     

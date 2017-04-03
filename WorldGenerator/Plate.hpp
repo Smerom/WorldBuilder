@@ -30,6 +30,7 @@ namespace WorldBuilder {
         wb_float densityOffset;
         
         Vec3 center;
+        const GridVertex* centerVertex;
         wb_float maxEdgeAngle;
         
         uint32_t id; // id in the world plate map
@@ -44,7 +45,7 @@ namespace WorldBuilder {
         
         size_t surfaceSize() const; // number of surface cells, not threadsafe
         void move(wb_float timestep);
-        void homeostasis(const WorldAttributes, float timestep);
+        void homeostasis(const WorldAttributes, wb_float timestep);
         Vec3 localToWorld(Vec3 local){
             return math::affineRotaionMulVec(this->rotationMatrix, local);
         }

@@ -37,13 +37,13 @@ namespace WorldBuilder {
         void Run();
         
     /*************** Getters ***************/
-        std::shared_ptr<World> get_world(){
+        std::shared_ptr<World> get_world() const{
             return this->theWorld;
         }
-        uint_fast32_t get_runTimesteps(){
+        uint_fast32_t get_runTimesteps() const {
             return this->runTimesteps;
         }
-        float get_runMinTimestep(){
+        float get_runMinTimestep() const {
             return this->runMinTimestep;
         }
         

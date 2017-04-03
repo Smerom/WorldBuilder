@@ -27,12 +27,14 @@ namespace WorldBuilder {
         
         void addGrpcGridPart(const api::Grid *theGrid);
         
+        void buildCenters();
+        
     /*************** Getters ***************/
         size_t verts_size(){
-            return this->verts.size();
+            return verts.size();
         }
         const std::vector<GridVertex>& get_vertices(){
-            return this->verts;
+            return verts;
         }
     };
     
@@ -45,6 +47,7 @@ namespace WorldBuilder {
     private:
         size_t index;
         Vec3 vector;
+        Vec3 neighborCenter;
         std::vector<GridVertex *> neighbors;
         
     public:
@@ -54,10 +57,16 @@ namespace WorldBuilder {
             return this->vector;
         }
         size_t get_index() const{
-            return this->index;
+            return index;
         }
         const std::vector<GridVertex *>& get_neighbors() const {
-            return this->neighbors;
+            return neighbors;
+        }
+        const Vec3 get_neighborCenter() const {
+            return neighborCenter;
+        }
+        const Vec3 displacementFromCenter() const {
+            return vector - neighborCenter;
         }
 
     };

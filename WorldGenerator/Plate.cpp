@@ -21,7 +21,7 @@ namespace WorldBuilder {
         return size;
     }
     
-    void Plate::homeostasis(const WorldAttributes worldAttributes, float timestep){
+    void Plate::homeostasis(const WorldAttributes worldAttributes, wb_float timestep){
         for (auto cellIt = this->cells.begin(); cellIt != this->cells.end(); cellIt++)
         {
             cellIt->second->homeostasis(worldAttributes, timestep);
@@ -40,7 +40,7 @@ namespace WorldBuilder {
         }
     }
     
-    Plate::Plate(uint32_t initialCellCount, uint32_t ourId) : rotationMatrix(math::identityMatrix()), id(ourId) {
+    Plate::Plate(uint32_t initialCellCount, uint32_t ourId) : rotationMatrix(math::identityMatrix()), id(ourId), centerVertex(nullptr), maxEdgeAngle(0) {
         this->cells.reserve(initialCellCount);
         this->angularSpeed = 0;
     }

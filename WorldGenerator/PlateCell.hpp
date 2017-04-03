@@ -22,9 +22,14 @@ namespace WorldBuilder {
      *
      *
      */
+    struct EdgeNeighbor {
+        uint32_t plateIndex;
+        uint32_t cellIndex;
+        wb_float distance;
+    };
     class EdgeCellInfo {
     public:
-        std::map<uint64_t, wb_float> otherPlateNeighbors; // lower 32 bits are cell index, higher are plate index
+        std::map<uint64_t, EdgeNeighbor> otherPlateNeighbors; // lower 32 bits are cell index, higher are plate index
         std::map<uint32_t, uint32_t> otherPlateLastNearest; // plate -> cell index
     };
     
@@ -57,14 +62,14 @@ namespace WorldBuilder {
         std::shared_ptr<EdgeCellInfo> edgeInfo; // shared with edge list
         std::shared_ptr<DisplacementInfo> displacement;
         
-        std::shared_ptr<MaterialFlowNode> flowNode;
+        MaterialFlowNode* flowNode;
         
         
         PlateCell(const GridVertex* vertex);
         
-        void homeostasis(const WorldAttributes, float timestep);
+        void homeostasis(const WorldAttributes, wb_float timestep);
         
-        float get_elevation() const;
+        wb_float get_elevation() const;
         
         const GridVertex* get_vertex() const {
             return this->vertex;
@@ -77,7 +82,7 @@ namespace WorldBuilder {
             return (!this->bIsSubducted && this->rock.isContinental());
         }
         
-        RockSegment erodeThickness(float thickness);
+        RockSegment erodeThickness(wb_float thickness);
         
     }; // class PlateCell
 } // namespace WorldBuilder

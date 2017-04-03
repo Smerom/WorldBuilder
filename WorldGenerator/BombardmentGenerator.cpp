@@ -25,8 +25,8 @@ namespace WorldBuilder {
             for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++)
             {
                 std::shared_ptr<PlateCell> cell = cellIt->second;
-                cell->rock.root.density = 3200;
-                cell->rock.root.thickness = prehistoricRootThickness;
+                cell->rock.root.set_density(3200);
+                cell->rock.root.set_thickness(prehistoricRootThickness);
             }
             // create our impact crater vector, crater radii
             std::vector<float> impacts;
@@ -68,14 +68,11 @@ namespace WorldBuilder {
                 float craterRadius = (*impactRadius) * theWorld->get_attributes().radius*1000;
                 
                 RockColumn materialEjected;
-                materialEjected.sediment.thickness = 0;
-                materialEjected.continental.thickness = 0;
-                materialEjected.oceanic.thickness = 0;
-                materialEjected.root.thickness = 0;
-                materialEjected.sediment.density = 1;
-                materialEjected.continental.density = 1;
-                materialEjected.oceanic.density = 1;
-                materialEjected.root.density = 1;
+                RockSegment zeroSegment(0,1);
+                materialEjected.sediment = zeroSegment;
+                materialEjected.continental = zeroSegment;
+                materialEjected.oceanic = zeroSegment;
+                materialEjected.root = zeroSegment;
                 
                 // TODO, MAKE BETER!
                 size_t tilesWithin = 0;
@@ -102,12 +99,10 @@ namespace WorldBuilder {
                     }
                 }
                 // place material (1/4 as much per tile as removed?)
-                RockSegment continentalConversion;
-                continentalConversion.thickness = (materialEjected.root.thickness / 2) * materialEjected.root.density / 2700;
-                continentalConversion.density = 2700;
+                RockSegment continentalConversion((materialEjected.root.get_thickness() / 2) * materialEjected.root.get_density() / 2700, 2700);
                 
                 materialEjected.continental = combineSegments(materialEjected.continental, continentalConversion);
-                materialEjected.root.thickness = materialEjected.root.thickness / 2;
+                materialEjected.root.set_thickness(materialEjected.root.get_thickness() / 2);
                 
                 float totalPercent = 0;
                 
@@ -144,17 +139,17 @@ namespace WorldBuilder {
                     RockColumn addedRock;
                     //addedRock.sediment.density = materialEjected.sediment.density;
                     //addedRock.sediment.thickness = materialEjected.sediment.thickness * materialPercentage;
-                    addedRock.continental.density = materialEjected.continental.density;
-                    addedRock.continental.thickness = materialEjected.continental.thickness * materialPercentage;
+                    addedRock.continental.set_density(materialEjected.continental.get_density());
+                    addedRock.continental.set_thickness(materialEjected.continental.get_thickness() * materialPercentage);
                     //addedRock.oceanic.density = materialEjected.oceanic.density;
                     //addedRock.oceanic.thickness = materialEjected.oceanic.thickness * materialPercentage;
-                    addedRock.root.density = materialEjected.root.density;
-                    addedRock.root.thickness = materialEjected.root.thickness * materialPercentage;
+                    addedRock.root.set_density(materialEjected.root.get_density());
+                    addedRock.root.set_thickness(materialEjected.root.get_thickness() * materialPercentage);
                     
                     
                     (*cell)->rock = accreteColumns((*cell)->rock, addedRock);
                     
-                    thicknessAdded += addedRock.continental.thickness+addedRock.root.thickness+addedRock.oceanic.thickness+addedRock.sediment.thickness;
+                    thicknessAdded += addedRock.thickness();
                 }
                 
                 //std::printf("Added to ejected: %e\n", thicknessAdded / materialEjected.thickness());
@@ -166,11 +161,13 @@ namespace WorldBuilder {
             for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++)
             {
                 std::shared_ptr<PlateCell> cell = cellIt->second;
-                cell->rock.root.thickness = cell->rock.root.thickness - 100000; // melt extra
-                // check to see if root is too small, may want to melt from other cells
-                if (cell->rock.root.thickness < theWorld->get_divergentOceanicColumn().root.thickness) {
-                    cell->rock.root.thickness = theWorld->get_divergentOceanicColumn().root.thickness;
+                
+                wb_float meltToThickness = cell->rock.root.get_thickness() - 100000;
+                // check to see if desired thickness is too small, may want to melt from other cells
+                if (meltToThickness < theWorld->get_divergentOceanicColumn().root.get_thickness()) {
+                    meltToThickness = theWorld->get_divergentOceanicColumn().root.get_thickness();
                 }
+                cell->rock.root.set_thickness(meltToThickness);
                 
                 // fill in with laaava
                 if (cell->rock.thickness() < theWorld->get_divergentOceanicColumn().thickness()) {

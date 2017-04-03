@@ -7,6 +7,7 @@
 #define Defines_h
 
 #include <chrono>
+#include <stdexcept>
 
 namespace WorldBuilder {
     
@@ -40,14 +41,9 @@ namespace WorldBuilder {
     };
     
     struct WorldUpdateTask  {
-        TaskTracker move;
-        TaskTracker cast;
-        TaskTracker homeostasis;
-        TaskTracker collision;
-        TaskTracker superCycle;
-        
-        TaskTracker erode;
-        TaskTracker plateRemoval;
+        TaskTracker movement;
+        TaskTracker transition;
+        TaskTracker modification;
         
         wb_float timestepUsed;
     };

@@ -15,7 +15,15 @@ namespace WorldBuilder {
     void SimulationRunner::Run(){
         // check if we've generated the base yet
         if (this->haveGenerated == false) {
+            std::cout << "Starting world initial generation" << std::endl;
+            
+            TaskTracker generationTracker;
+            generationTracker.start();
             this->theGenerator->Generate(this->theWorld);
+            generationTracker.end();
+            
+            std::cout << "Intitial Generation took " << generationTracker.duration().count() << " seconds." << std::endl;
+            
             this->haveGenerated = true;
         }
         
@@ -33,11 +41,11 @@ namespace WorldBuilder {
             // log our timings
             // movement
             double min, max, average, durationSeconds;
-            min = tasks[0].move.duration().count();
+            min = tasks[0].movement.duration().count();
             max = min;
             average = min;
             for (uint_fast32_t i = 1; i < stepCount; i++) {
-                durationSeconds = tasks[i].move.duration().count();
+                durationSeconds = tasks[i].movement.duration().count();
                 average = average + durationSeconds;
                 if (min > durationSeconds) {
                     min = durationSeconds;
@@ -47,14 +55,14 @@ namespace WorldBuilder {
                 }
             }
             average = average / stepCount;
-            std::cout << "Movement took " << average << " on average, with min: " << min << " max: " << max << "\n";
+            std::cout << "Movement phase took " << average << " on average, with min: " << min << " max: " << max << "\n";
             
-            // casting
-            min = tasks[0].cast.duration().count();
+            // transition
+            min = tasks[0].transition.duration().count();
             max = min;
             average = min;
             for (uint_fast32_t i = 1; i < stepCount; i++) {
-                durationSeconds = tasks[i].cast.duration().count();
+                durationSeconds = tasks[i].transition.duration().count();
                 average = average + durationSeconds;
                 if (min > durationSeconds) {
                     min = durationSeconds;
@@ -64,14 +72,14 @@ namespace WorldBuilder {
                 }
             }
             average = average / stepCount;
-            std::cout << "Cell casting took " << average << " on average, with min: " << min << " max: " << max << "\n";
+            std::cout << "Transition phase took " << average << " on average, with min: " << min << " max: " << max << "\n";
             
-            // homeostasis
-            min = tasks[0].homeostasis.duration().count();
+            // movement
+            min = tasks[0].modification.duration().count();
             max = min;
             average = min;
             for (uint_fast32_t i = 1; i < stepCount; i++) {
-                durationSeconds = tasks[i].homeostasis.duration().count();
+                durationSeconds = tasks[i].modification.duration().count();
                 average = average + durationSeconds;
                 if (min > durationSeconds) {
                     min = durationSeconds;
@@ -81,58 +89,8 @@ namespace WorldBuilder {
                 }
             }
             average = average / stepCount;
-            std::cout << "Homeostasis took " << average << " on average, with min: " << min << " max: " << max << "\n";
+            std::cout << "Modification phase took " << average << " on average, with min: " << min << " max: " << max << "\n";
             
-            // Collision phase
-            min = tasks[0].collision.duration().count();
-            max = min;
-            average = min;
-            for (uint_fast32_t i = 1; i < stepCount; i++) {
-                durationSeconds = tasks[i].collision.duration().count();
-                average = average + durationSeconds;
-                if (min > durationSeconds) {
-                    min = durationSeconds;
-                }
-                if (max < durationSeconds) {
-                    max = durationSeconds;
-                }
-            }
-            average = average / stepCount;
-            std::cout << "Collision phase took " << average << " on average, with min: " << min << " max: " << max << "\n";
-            
-            // erosion
-            min = tasks[0].erode.duration().count();
-            max = min;
-            average = min;
-            for (uint_fast32_t i = 1; i < stepCount; i++) {
-                durationSeconds = tasks[i].erode.duration().count();
-                average = average + durationSeconds;
-                if (min > durationSeconds) {
-                    min = durationSeconds;
-                }
-                if (max < durationSeconds) {
-                    max = durationSeconds;
-                }
-            }
-            average = average / stepCount;
-            std::cout << "Erosion took " << average << " on average, with min: " << min << " max: " << max << "\n";
-            
-            // super cycle
-            min = tasks[0].superCycle.duration().count();
-            max = min;
-            average = min;
-            for (uint_fast32_t i = 1; i < stepCount; i++) {
-                durationSeconds = tasks[i].superCycle.duration().count();
-                average = average + durationSeconds;
-                if (min > durationSeconds) {
-                    min = durationSeconds;
-                }
-                if (max < durationSeconds) {
-                    max = durationSeconds;
-                }
-            }
-            average = average / stepCount;
-            std::cout << "Supercontinent Cycle took " << average << " on average, with min: " << min << " max: " << max << "\n";
             
             min = tasks[0].timestepUsed;
             max = min;
