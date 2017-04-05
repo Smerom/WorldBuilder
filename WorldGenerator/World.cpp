@@ -31,15 +31,21 @@ namespace WorldBuilder {
         
         // find a reasonable timestep (currently broken)
         // should get fastest relative speeds
-        wb_float fastestPlateSpeed = 0; // fastest plate speeds
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate> plate = plateIt->second;
-            if (fastestPlateSpeed < std::abs(plate->angularSpeed)) {
-                fastestPlateSpeed = std::abs(plate->angularSpeed);
+        wb_float fastestRelativePlateSpeed = 0; // fastest plate speeds
+        for (auto plateIt = this->plates.begin(), end = this->plates.end(); plateIt != end; plateIt++) {
+            std::shared_ptr<Plate>& plate = plateIt->second;
+            auto testPlateIt = plateIt;
+            testPlateIt++;
+            for (; testPlateIt != end; testPlateIt++) {
+                std::shared_ptr<Plate>& testPlate = testPlateIt->second;
+                wb_float relativeSpeed = ((plate->pole * plate->angularSpeed) - (testPlate->pole * testPlate->angularSpeed)).length();
+                if (fastestRelativePlateSpeed < relativeSpeed) {
+                    fastestRelativePlateSpeed = relativeSpeed;
+                }
             }
         }
         // since we are on the unit sphere (assumed)
-        timestep = (this->cellSmallAngle / fastestPlateSpeed ) / 3;
+        timestep = this->cellSmallAngle / fastestRelativePlateSpeed;
         if (timestep < minTimestep) {
             timestep = minTimestep;
         } else if (timestep > 10) {
@@ -92,6 +98,11 @@ namespace WorldBuilder {
         // normalize plate grid
         this->renormalizeAllPlates();
         
+        // rifting
+        for (auto&& plateIt : this->plates) {
+            this->riftPlate(plateIt.second);
+        }
+        
         // split in supercontinent if needed
         this->supercontinentCycle();
         
@@ -117,9 +128,71 @@ namespace WorldBuilder {
     }
     
 /****************************** Transistion ******************************/
+    void World::riftPlate(std::shared_ptr<Plate> plate) {
+        
+        std::vector<std::shared_ptr<Plate>> interactablePlates;
+        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
+            std::shared_ptr<Plate>& testPlate = plateIt->second;
+            // ignore self
+            if (testPlate != plate) {
+                // test interacability between plates
+                Matrix3x3 targetToTest = math::matrixMul(math::transpose(testPlate->rotationMatrix), plate->rotationMatrix);
+                // if the plates max extent overlap, test edges
+                Vec3 testCenter = math::affineRotaionMulVec(targetToTest, plate->center);
+                wb_float testAngle = math::angleBetweenUnitVectors(plate->center, testCenter);
+                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle) {
+                    // some cells may interact, add to interactables
+                    interactablePlates.push_back(testPlate);
+                }
+            }
+        }
+        
+        // for each rifting target
+        for(auto&& riftIndex : plate->riftingTargets) {
+            bool cellFound = false;
+            for (auto&& testPlate : interactablePlates) {
+                // test interacability between plates
+                Matrix3x3 targetToTest = math::matrixMul(math::transpose(testPlate->rotationMatrix), plate->rotationMatrix);
+                // if the plates max extent overlap, test edges
+                Vec3 riftInTest = math::affineRotaionMulVec(targetToTest, this->worldGrid->get_vertices()[riftIndex].get_vector());
+                wb_float testAngle = math::angleBetweenUnitVectors(testPlate->center, riftInTest);
+                if (testAngle < testPlate->maxEdgeAngle) {
+                    // may interact
+                    // could grab better hint from neighbor
+                    uint32_t hint = 0;
+                    if (testPlate->centerVertex != nullptr) {
+                        hint = testPlate->centerVertex->get_index();
+                    }
+                    uint32_t indexInTest = this->getNearestGridIndex(riftInTest, hint);
+                    
+                    // check in cells
+                    auto cellTestIt = testPlate->cells.find(indexInTest);
+                    if (cellTestIt != testPlate->cells.end()) {
+                        cellFound = true;
+                        break;
+                    } else {
+                        auto testRift = testPlate->riftingTargets.find(indexInTest);
+                        if (testRift != testPlate->riftingTargets.end()) {
+                            cellFound = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!cellFound) {
+                // create oceanic and add to plate
+                std::shared_ptr<PlateCell> riftedCell = std::make_shared<PlateCell>(&this->worldGrid->get_vertices()[riftIndex]);
+                riftedCell->rock = this->divergentOceanicColumn;
+                
+                plate->cells[riftIndex] = riftedCell;
+            }
+        }
+    }
+    
     void World::updatePlateEdges(std::shared_ptr<Plate> plate) {
         // clear the edgeCells
         plate->edgeCells.clear();
+        plate->riftingTargets.clear();
         
         // TODO replace with a smallest bounding circle implementation
         
@@ -142,7 +215,8 @@ namespace WorldBuilder {
                 auto neighborCellIt = plate->cells.find(index);
                 if (neighborCellIt == plate->cells.end()) {
                     isEdge = true;
-                    break; // found at least one missing cell
+                    // add to rifting targets, keep looping to get the remaining rifting targest
+                    plate->riftingTargets.insert(index);
                 }
             }
             if (isEdge) {
@@ -182,6 +256,8 @@ namespace WorldBuilder {
                 plate->maxEdgeAngle = testDistance;
             }
         }
+        // add a bit to the max edge angle to capture cells withing one breadth of the rifing targets
+        plate->maxEdgeAngle = plate->maxEdgeAngle + 2 * this->cellSmallAngle;
     }
     
     void World::knitPlates(std::shared_ptr<Plate> plate) {
@@ -340,8 +416,11 @@ namespace WorldBuilder {
                 weights.clear();
                 totalWeight = 0;
                 
+                // find the normalized new location
+                Vec3 cellLocation = math::normalize3Vector(cell->get_vertex()->get_vector() + cell->displacement->displacementLocation);
+                
                 // find the nearest index
-                uint32_t nearestIndex = this->getNearestGridIndex(cell->displacement->displacementLocation, cell->get_vertex()->get_index());
+                uint32_t nearestIndex = this->getNearestGridIndex(cellLocation, cell->get_vertex()->get_index());
                 const GridVertex* nearestVertex = &this->worldGrid->get_vertices()[nearestIndex];
                 
                 // find weights for nearest and each neighbors
@@ -352,7 +431,7 @@ namespace WorldBuilder {
                 if (targetCellIt != plate->cells.end()) {
                     std::shared_ptr<PlateCell> targetCell = targetCellIt->second;
                     // weight with nearest
-                    wb_float weight = math::circleIntersectionArea(math::distanceBetween3Points(targetCell->get_vertex()->get_vector(), cell->displacement->displacementLocation), cellRadius);
+                    wb_float weight = math::circleIntersectionArea(math::distanceBetween3Points(targetCell->get_vertex()->get_vector(), cellLocation), cellRadius);
                     totalWeight += weight;
                     weights.push_back(std::make_pair(targetCell, weight));
                 }
@@ -362,13 +441,16 @@ namespace WorldBuilder {
                     if (targetCellIt != plate->cells.end()) {
                         std::shared_ptr<PlateCell> targetCell = targetCellIt->second;
                         // weight with neighbor
-                        wb_float weight = math::circleIntersectionArea(math::distanceBetween3Points(targetCell->get_vertex()->get_vector(), cell->displacement->displacementLocation), cellRadius);
+                        wb_float weight = math::circleIntersectionArea(math::distanceBetween3Points(targetCell->get_vertex()->get_vector(), cellLocation), cellRadius);
                         totalWeight += weight;
                         weights.push_back(std::make_pair(targetCell, weight));
                     }
                 }
                 
                 // move rock based on weights
+                if (totalWeight <= 0) {
+                    throw std::logic_error("Cell moved to invalid location (likely outside of edge border).");
+                }
                 for (auto destinationIt = weights.begin(); destinationIt != weights.end(); destinationIt++) {
                     std::shared_ptr<PlateCell> destinationCell = destinationIt->first;
                     wb_float destinationWeight = destinationIt->second;
@@ -688,10 +770,10 @@ namespace WorldBuilder {
         size_t index = 0;
         for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
             for (auto cellIt = plateIt->second->cells.begin(); cellIt != plateIt->second->cells.end(); cellIt++, index++) {
-                std::shared_ptr<PlateCell> cell = cellIt->second;
+                std::shared_ptr<PlateCell>& cell = cellIt->second;
                 graph->nodes[index].set_materialHeight(cell->rock.sediment.get_thickness());
                 graph->nodes[index].offsetHeight = cell->get_elevation() - graph->nodes[index].get_materialHeight();
-                cell->flowNode = &(graph->nodes[index]);
+                cell->flowNode = &graph->nodes[index];
             }
         }
         
@@ -699,9 +781,9 @@ namespace WorldBuilder {
         std::vector<std::pair<MaterialFlowNode*, wb_float>> outflowCandidates;
         // find outflow only, inflow set from outflow nodes
         for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate> plate = plateIt->second;
+            std::shared_ptr<Plate>& plate = plateIt->second;
             for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
-                std::shared_ptr<PlateCell> cell = cellIt->second;
+                std::shared_ptr<PlateCell>& cell = cellIt->second;
                 // we grab the elevations from the flow graph, incase a different module wants to modify the elevatsion while sediment transport is in progress
                 wb_float elevation = cell->flowNode->get_materialHeight() + cell->flowNode->offsetHeight;
                 
@@ -712,7 +794,7 @@ namespace WorldBuilder {
                 for (auto neighborIndexIt = cell->get_vertex()->get_neighbors().begin(); neighborIndexIt != cell->get_vertex()->get_neighbors().end(); neighborIndexIt++) {
                     auto neighborIt = plate->cells.find((*neighborIndexIt)->get_index());
                     if (neighborIt != plate->cells.end()) {
-                        std::shared_ptr<PlateCell> neighborCell = neighborIt->second;
+                        std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                         wb_float heightDifference = elevation - (neighborCell->flowNode->get_materialHeight() + neighborCell->flowNode->offsetHeight);
                         if (heightDifference > 0) {
                             // downhill node found, take note
@@ -729,10 +811,10 @@ namespace WorldBuilder {
                     for (auto neighborIndexIt = cell->edgeInfo->otherPlateNeighbors.begin(); neighborIndexIt != cell->edgeInfo->otherPlateNeighbors.end(); neighborIndexIt++) {
                         auto neighborPlateIt = this->plates.find(neighborIndexIt->second.plateIndex);
                         if (neighborPlateIt != this->plates.end()){
-                            std::shared_ptr<Plate> neighborPlate = neighborPlateIt->second;
+                            std::shared_ptr<Plate>& neighborPlate = neighborPlateIt->second;
                             auto neighborIt = neighborPlate->cells.find(neighborIndexIt->second.cellIndex);
                             if (neighborIt != neighborPlate->cells.end()) {
-                                std::shared_ptr<PlateCell> neighborCell = neighborIt->second;
+                                std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                                 wb_float heightDifference = elevation - (neighborCell->flowNode->get_materialHeight() + neighborCell->flowNode->offsetHeight);
                                 if (heightDifference > 0) {
                                     // downhill node found, take note
@@ -1002,11 +1084,8 @@ namespace WorldBuilder {
                     if (displacement.length() > this->cellSmallAngle / 2) {
                         displacement = displacement * (this->cellSmallAngle / 2 / displacement.length());
                     }
-                    //  MODIFIED FOR DEBUG!
-                    //  Not currently
-                    //
-                    //
-                    edgeCell->displacement->displacementLocation = math::normalize3Vector(edgeCell->get_vertex()->get_vector() + displacement);
+                    edgeCell->displacement->displacementLocation = displacement;
+                    //edgeCell->displacement->touched = true;
                     
                     // set delete target, will be nullptr if none found
                     edgeCell->displacement->deleteTarget = deleteTarget.first;
@@ -1018,54 +1097,79 @@ namespace WorldBuilder {
     
     // currently a very basic displacement balancer, not forces
     void World::balanceInternalPlateForce(std::shared_ptr<Plate> plate, wb_float timestep) {
-        const wb_float minDisplacment = this->cellSmallAngle / 100;
+        const wb_float decayFactor = exp(-0.051293*timestep);
+        const wb_float minDisplacement = this->cellSmallAngle / 10;
         int i;
         bool hadMovement = true;
         for (i = 0; i < 100 && hadMovement; i++) {
             hadMovement = false;
             for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
-                std::shared_ptr<PlateCell> cell = cellIt->second;
+                std::shared_ptr<PlateCell>& cell = cellIt->second;
                 if (cell->edgeInfo == nullptr) {
                     // find center of current neighbors, move to that minus min displacement distance
-                    Vec3 neighborCenter;
-                    Vec3 expectedCenter;
-                    Vec3 currentLocation;
-                    if (cell->displacement != nullptr) {
-                        currentLocation = cell->displacement->displacementLocation;
-                    } else {
-                        currentLocation = cell->get_vertex()->get_vector();
-                    }
-                    for (auto neighborIndexIt = cell->get_vertex()->get_neighbors().begin(); neighborIndexIt != cell->get_vertex()->get_neighbors().end(); neighborIndexIt++) {
-                        auto neighborIt = plate->cells.find((*neighborIndexIt)->get_index());
+                    
+                    Vec3 desiredDisplacement;
+                    bool displaced = false;
+                    for (auto&& neighborVertex : cell->get_vertex()->get_neighbors()) {
+                        auto neighborIt = plate->cells.find(neighborVertex->get_index());
                         if (neighborIt != plate->cells.end()) {
-                            std::shared_ptr<PlateCell> neighborCell = neighborIt->second;
-                            Vec3 neighborVector;
+                            std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                             if (neighborCell->displacement != nullptr) {
-                                neighborVector = neighborCell->displacement->displacementLocation;
-                            } else {
-                                neighborVector = neighborCell->get_vertex()->get_vector();
+                                Vec3 normalizedDisplacement = math::normalize3Vector(neighborCell->displacement->displacementLocation);
+                                wb_float angle = math::angleBetweenUnitVectors(math::normalize3Vector(cell->get_vertex()->get_vector() - neighborCell->get_vertex()->get_vector()), normalizedDisplacement);
+                                if (angle < math::piOverTwo) {
+                                    wb_float weight = 0;
+                                    //  could skip angle computation for this vertex, also normalized vectors could be precomputed for ~ 6*8*3*vertexCount bytes
+                                    for (auto&& testVertex : cell->get_vertex()->get_neighbors()) {
+                                        wb_float testAngle = math::angleBetweenUnitVectors(math::normalize3Vector(cell->get_vertex()->get_vector() - testVertex->get_vector()), normalizedDisplacement);
+                                        if (testAngle < math::piOverTwo) {
+                                            weight+= cos(testAngle);
+                                        }
+                                    }
+                                    desiredDisplacement = desiredDisplacement + neighborCell->displacement->displacementLocation * (cos(angle) / weight);
+                                    displaced = true;
+                                }
                             }
-                            neighborCenter = neighborCenter + neighborVector;
-                        } else {
-                            throw std::logic_error("something's fishy with the edge finding, hole in middle of plate");
                         }
-                    } // end for each neighbor index
-                    // normalize center
-                    neighborCenter = math::normalize3Vector(neighborCenter);
-                    Vec3 displacementToCenter = (neighborCenter + cell->get_vertex()->displacementFromCenter()) - currentLocation;
-                    if (displacementToCenter.length() > minDisplacment) {
-                        displacementToCenter = displacementToCenter * ((displacementToCenter.length() - minDisplacment) * 0.5 / displacementToCenter.length()); // only travel half the distance
+                    }
+                    if (displaced) {
                         if (cell->displacement == nullptr) {
                             cell->displacement = std::make_shared<DisplacementInfo>();
                         }
-                        cell->displacement->displacementLocation = math::normalize3Vector(currentLocation + displacementToCenter);
-                        hadMovement = true;
+                        
+                        // remove the normal component so it's purpendicular to the sphere
+                        desiredDisplacement = desiredDisplacement - cell->get_vertex()->get_vector() * cell->get_vertex()->get_vector().dot(desiredDisplacement);
+                        Vec3 change = desiredDisplacement - cell->displacement->displacementLocation;
+                        if(change.length() > minDisplacement) {
+                            cell->displacement->nextDisplacementLocation = desiredDisplacement * decayFactor;
+                            hadMovement = true;
+                        }
+                    }
+                }
+            }
+            
+            // update for next round;
+            for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
+                std::shared_ptr<PlateCell>& cell = cellIt->second;
+                if (cell->displacement != nullptr) {
+                    if (cell->edgeInfo == nullptr) {
+                        cell->displacement->displacementLocation = cell->displacement->nextDisplacementLocation;
+
                     }
                 }
             }
         }
         
-        std::cout << "Finished balacing plate " << plate->id << " in " << i << " steps." << std::endl;
+//        wb_float averageDisplacement = 0;
+//        wb_float cellCount = plate->cells.size();
+//        for(auto&& cellIt: plate->cells) {
+//            std::shared_ptr<PlateCell> cell = cellIt.second;
+//            if (cell->displacement != nullptr) {
+//                averageDisplacement = cell->displacement->displacementLocation.length() / cellCount;
+//            }
+//        }
+        
+        std::cout << "Finished balacing plate " << plate->id << " in " << i << " steps."/* Average displacement of " << averageDisplacement / this->cellSmallAngle << "x smallest angle."*/ << std::endl;
     }
     
     
@@ -1168,7 +1272,7 @@ namespace WorldBuilder {
         // supercontinent stuff
         this->supercontinentCycleDuration = 0;
         this->supercontinentCycleStartAge = 0;
-        this->desiredPlateCount = 6;
+        this->desiredPlateCount = 10;
         
         // set cell small angle
         // ~ distance on unit sphere

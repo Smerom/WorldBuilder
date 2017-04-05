@@ -66,7 +66,7 @@ public:
         grid->buildCenters();
         
         std::random_device rd;
-        uint seed = rd(); // get a random seed
+        uint seed = 4254582156;// rd(); // get a random seed
         std::printf("Random Seed: %u\n", seed);
         // create the generator
         std::shared_ptr<WorldBuilder::Random> randomSource(new WorldBuilder::Random(seed));
@@ -79,13 +79,13 @@ public:
         while (open) {
             
 // commented out so the debugger stops on all exceptions
-            try {
+//            try {
                 runner.Run();
-            } catch (const std::exception& e) {
-                std::printf("Broken simulation on seed: %u\n", seed);
-                std::cout << "Exception: " << e.what() << std::endl;
-                break;
-            }
+//            } catch (const std::exception& e) {
+//                std::printf("Broken simulation on seed: %u\n", seed);
+//                std::cout << "Exception: " << e.what() << std::endl;
+//                break;
+//            }
         
             api::SimulationInfo info;
             
@@ -101,7 +101,7 @@ public:
             };
             
             unsigned int concurentThreadMax = std::thread::hardware_concurrency();
-            concurentThreadMax = 1; // force single threaded
+            //concurentThreadMax = 1; // force single threaded
             
             unsigned int vertsPerThread = grid->get_vertices().size() / concurentThreadMax;
             unsigned int leftOverVerts = grid->get_vertices().size() % concurentThreadMax;

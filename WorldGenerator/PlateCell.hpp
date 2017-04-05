@@ -36,8 +36,13 @@ namespace WorldBuilder {
     class DisplacementInfo {
     public:
         Vec3 displacementLocation;
+        Vec3 nextDisplacementLocation;
+        //bool touched;
+        //bool touchedNextRound;
         RockColumn displacedRock;
         std::shared_ptr<PlateCell> deleteTarget;
+        
+        //DisplacementInfo() : touched(false), touchedNextRound(false){};
     };
     
     /***************  Plate Cell ***************/

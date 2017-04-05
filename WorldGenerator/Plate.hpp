@@ -8,6 +8,7 @@
 #define Plate_hpp
 
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Defines.h"
 #include "PlateCell.hpp"
@@ -38,6 +39,7 @@ namespace WorldBuilder {
         // TODO, make not public!
         std::unordered_map<uint32_t, std::shared_ptr<PlateCell>> cells;
         std::unordered_map<uint32_t, std::shared_ptr<PlateCell>> edgeCells;
+        std::unordered_set<uint32_t> riftingTargets;
         
         Plate(uint32_t initialCellCount, uint32_t ourId);
         

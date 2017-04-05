@@ -77,6 +77,8 @@ namespace WorldBuilder {
     };
     
     namespace math {
+        const wb_float piOverTwo = 1.5707963267948966192313216916397514420985847;
+
         wb_float distanceFromPole(const Vec3 position, const Vec3 pole); // assumes normalized vectors
         wb_float distanceBetween3Points(const Vec3 point1, const Vec3 point2);
         wb_float squareDistanceBetween3Points(const Vec3 point1, const Vec3 point2);

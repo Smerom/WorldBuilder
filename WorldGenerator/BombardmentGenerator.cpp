@@ -24,7 +24,7 @@ namespace WorldBuilder {
             std::shared_ptr<Plate> plate = plateIt->second;
             for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++)
             {
-                std::shared_ptr<PlateCell> cell = cellIt->second;
+                std::shared_ptr<PlateCell>& cell = cellIt->second;
                 cell->rock.root.set_density(3200);
                 cell->rock.root.set_thickness(prehistoricRootThickness);
             }
@@ -58,7 +58,7 @@ namespace WorldBuilder {
                 impacts.push_back(radius / theWorld->get_attributes().radius);
             }
             
-            std::vector<float> materialValue;
+            std::vector<wb_float> materialValue;
             std::vector<PlateCell*> ejectaCells;
             for (std::vector<float>::iterator impactRadius = impacts.begin();
                  impactRadius != impacts.end();
@@ -77,9 +77,9 @@ namespace WorldBuilder {
                 // TODO, MAKE BETER!
                 size_t tilesWithin = 0;
                 size_t tilesWithout = 0;
-                for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++)
+                for (auto&& cellIt : plate->cells)
                 {
-                    std::shared_ptr<PlateCell> cell = cellIt->second;
+                    std::shared_ptr<PlateCell>& cell = cellIt.second;
                     float distance = math::distanceBetween3Points(randomPoint, cell->get_vertex()->get_vector());
                     // for now just remove material in a symetrical manner
                     if (distance < (*impactRadius)) {
@@ -106,14 +106,12 @@ namespace WorldBuilder {
                 
                 float totalPercent = 0;
                 
-                for (std::vector<PlateCell*>::iterator cell = ejectaCells.begin();
-                     cell != ejectaCells.end();
-                     cell++)
+                for (auto&& cell : ejectaCells)
                 {
                     // from r to 2r x*( 3/(r*sqrt(2*pi))*( e^-((x-r)^2/(2*r^2/9)) ) )^2 integrates to 0.50270049114536518
                     // at a rotation about the y axis
                     //const float ejectaFactor = 1 / 0.50270049114536518;
-                    float distance = math::distanceBetween3Points(randomPoint, (*cell)->get_vertex()->get_vector());
+                    float distance = math::distanceBetween3Points(randomPoint, cell->get_vertex()->get_vector());
                     distance = distance * theWorld->get_attributes().radius * 1000; //to meters
                     
                     // exponential, starts with cliff edge however
@@ -130,11 +128,9 @@ namespace WorldBuilder {
                 }
                 float thicknessAdded = 0;
                 size_t index = 0;
-                for (std::vector<PlateCell*>::iterator cell = ejectaCells.begin();
-                     cell != ejectaCells.end();
-                     cell++, index++)
+                for (auto&& cell : ejectaCells)
                 {
-                    float materialPercentage = materialValue[index] / totalPercent;
+                    wb_float materialPercentage = materialValue[index] / totalPercent;
                     
                     RockColumn addedRock;
                     //addedRock.sediment.density = materialEjected.sediment.density;
@@ -147,9 +143,10 @@ namespace WorldBuilder {
                     addedRock.root.set_thickness(materialEjected.root.get_thickness() * materialPercentage);
                     
                     
-                    (*cell)->rock = accreteColumns((*cell)->rock, addedRock);
+                    cell->rock = accreteColumns(cell->rock, addedRock);
                     
                     thicknessAdded += addedRock.thickness();
+                    index++;
                 }
                 
                 //std::printf("Added to ejected: %e\n", thicknessAdded / materialEjected.thickness());
@@ -158,9 +155,9 @@ namespace WorldBuilder {
             }
             
             // flood low stuff with lava
-            for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++)
+            for (auto&& cellIt : plate->cells)
             {
-                std::shared_ptr<PlateCell> cell = cellIt->second;
+                std::shared_ptr<PlateCell>& cell = cellIt.second;
                 
                 wb_float meltToThickness = cell->rock.root.get_thickness() - 100000;
                 // check to see if desired thickness is too small, may want to melt from other cells

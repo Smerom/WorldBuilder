@@ -86,6 +86,8 @@ namespace WorldBuilder {
         void renormalizeAllPlates();
         void renormalizePlate(std::shared_ptr<Plate> thePlate);
         
+        void riftPlate(std::shared_ptr<Plate> plate);
+        
         void homeostasis(wb_float timestep);
         void supercontinentCycle();
         
