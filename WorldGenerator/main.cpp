@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include <random>
+#include <thread>
 
 #include <grpc/grpc.h>
 #include <grpc++/server.h>
@@ -61,50 +62,97 @@ public:
             currentGridCount += readGrid.vertices_size();
         }
         
+        // finish grid creation
+        grid->buildCenters();
+        
         std::random_device rd;
-        uint seed = rd(); // get a random seed
+        uint seed = 4254582156;// rd(); // get a random seed
         std::printf("Random Seed: %u\n", seed);
         // create the generator
         std::shared_ptr<WorldBuilder::Random> randomSource(new WorldBuilder::Random(seed));
         WorldBuilder::SimulationRunner runner(new WorldBuilder::BombardmentGenerator(randomSource), new WorldBuilder::World(grid, randomSource));
-        runner.set_runTimesteps(1);
+        runner.set_runTimesteps(10);
         runner.set_runMinTimestep(0.05);
-        runner.shouldLogRunTiming = false;
+        runner.shouldLogRunTiming = true;
         
         bool open = true;
         while (open) {
             
-            try {
+// commented out so the debugger stops on all exceptions
+//            try {
                 runner.Run();
-            } catch (...) {
-                std::printf("Broken simulation on seed: %u\n", seed);
-                break;
+//            } catch (const std::exception& e) {
+//                std::printf("Broken simulation on seed: %u\n", seed);
+//                std::cout << "Exception: " << e.what() << std::endl;
+//                break;
+//            }
+        
+            api::SimulationInfo info;
+            
+            std::chrono::time_point<std::chrono::high_resolution_clock> renderStart;
+            std::chrono::time_point<std::chrono::high_resolution_clock> renderEnd;
+            // split rendering among cores
+            renderStart = std::chrono::high_resolution_clock::now();
+            auto renderPart = [grid, runner](size_t startIndex, size_t end_index, std::shared_ptr<std::vector<float>> storage) {
+                for (size_t index = startIndex; index < end_index; index++) {
+                    float elevation = runner.get_world()->get_elevation(grid->get_vertices()[index].get_vector());
+                    storage->push_back(elevation);
+                }
+            };
+            
+            unsigned int concurentThreadMax = std::thread::hardware_concurrency();
+            //concurentThreadMax = 1; // force single threaded
+            
+            unsigned int vertsPerThread = grid->get_vertices().size() / concurentThreadMax;
+            unsigned int leftOverVerts = grid->get_vertices().size() % concurentThreadMax;
+            
+            
+            std::vector<std::shared_ptr<std::vector<float>>> results;
+            std::vector<std::thread> threads;
+            
+            size_t currentStart = 0;
+            for (unsigned int threadIndex = 0; threadIndex < concurentThreadMax; threadIndex++) {
+                size_t vertsToDo = vertsPerThread;
+                if (threadIndex < leftOverVerts) {
+                    vertsToDo++;
+                }
+                std::shared_ptr<std::vector<float>> threadResults = std::make_shared<std::vector<float>>();
+                threadResults->reserve(vertsToDo);
+                results.push_back(threadResults);
+                
+                threads.push_back(std::thread(renderPart, currentStart, currentStart + vertsToDo, threadResults));
+                
+                currentStart += vertsToDo;
             }
             
-            api::SimulationInfo info;
-            for (std::vector<WorldBuilder::WorldCell>::const_iterator cell = runner.get_world()->get_cells().begin();
-                 cell != runner.get_world()->get_cells().end();
-                 cell++)
-            {
-                int_fast32_t activeIndex = runner.get_world()->activePlateIndexForCell(&*cell);
-                float elevation = cell->get_elevation(activeIndex);
-                //std::cout << elevation << std::endl;
-                if (elevation > 18000) {
-                    //std::cout << elevation << std::endl;
+            // join our threads and get the results to the grpc object
+            auto resultsIt = results.begin();
+            for (auto threadIt = threads.begin(); threadIt != threads.end(); threadIt++, resultsIt++) {
+                threadIt->join();
+                // results are now done for this thread, add them
+                for (auto elevationIt = (*resultsIt)->begin(); elevationIt != (*resultsIt)->end(); elevationIt++) {
+                    float elevation = *elevationIt;
+                    info.add_elevations(elevation);
                 }
-                float sedimentHeight = 0;
-                if (activeIndex >=0){
-                    sedimentHeight = cell->get_surfaceCells()[activeIndex][0]->rock.sediment.thickness;
-                } else {
-                    sedimentHeight = cell->get_strandedSegment().thickness;
-                }
-                
-                uint_fast32_t plateIndex = runner.get_world()->activePlateIndexForCell(&*cell);
-                
-                info.add_elevations(elevation);
-                info.add_sediment(sedimentHeight);
-                info.add_plates(plateIndex);
             }
+            
+//            for (auto vertexIt = grid->get_vertices().begin(); vertexIt != grid->get_vertices().end(); vertexIt++)
+//            {
+//                float elevation = runner.get_world()->get_elevation(vertexIt->get_vector());
+//                //std::cout << elevation << std::endl;
+//                if (elevation > 18000) {
+//                    //std::cout << elevation << std::endl;
+//                }
+//                                
+//                
+//                //info.add_sediment(sedimentHeight);
+//                //info.add_plates(plateIndex);
+//            }
+            renderEnd = std::chrono::high_resolution_clock::now();
+            
+            std::chrono::duration<double> renderDuration = renderEnd - renderStart;
+            
+            std::cout << "Rendering took " << renderDuration.count() << " seconds." << std::endl;
             
             info.set_age(runner.get_world()->get_age());
             open = stream->Write(info);

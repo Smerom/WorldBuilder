@@ -21,7 +21,7 @@ namespace WorldBuilder {
         
         Vec3 getRandomPointUnitSphere();
         Vec3 getRandomPointAlongGreatCircle(Vec3 pole);
-        float randomNormal(float mean, float stdev);
+        wb_float randomNormal(wb_float mean, wb_float stdev);
         uint_fast32_t randomUniform(uint_fast32_t min, uint_fast32_t max);
         size_t uniformIndex(size_t min, size_t max);
     private:

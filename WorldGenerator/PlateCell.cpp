@@ -8,101 +8,54 @@
 
 namespace WorldBuilder {
     
-    float PlateCell::get_elevation() const {
+    wb_float PlateCell::get_elevation() const {
         return this->baseOffset + this->rock.thickness();
     }
     
-    RockSegment PlateCell::erodeThickness(float thickness){
-        float remainingThickness = thickness;
-        float mass = 0; // eroded mass
-        
-        RockSegment erodedSegment;
-        erodedSegment.density = 1;
-        erodedSegment.thickness = 0;
-
-        // TODO check for negative thickness
-        if (thickness <= 0) {
-            return erodedSegment;
-        }
-        // sediment
-        if (remainingThickness - this->rock.sediment.thickness > 0) {
-            remainingThickness -= this->rock.sediment.thickness;
-            mass += this->rock.sediment.mass();
-            this->rock.sediment.thickness = 0;
-        } else {
-            mass += remainingThickness * this->rock.sediment.density;
-            this->rock.sediment.thickness -= remainingThickness;
-            
-            erodedSegment.thickness = thickness;
-            erodedSegment.density = mass / thickness;
-            
-            return erodedSegment;
-        }
-        // continental
-        if (remainingThickness - this->rock.continental.thickness > 0) {
-            remainingThickness -= this->rock.continental.thickness;
-            mass += this->rock.continental.mass();
-            this->rock.continental.thickness = 0;
-        } else {
-            mass += remainingThickness * this->rock.continental.density;
-            this->rock.continental.thickness -= remainingThickness;
-            
-            erodedSegment.thickness = thickness;
-            erodedSegment.density = mass / thickness;
-            
-            return erodedSegment;
-        }
-        // oceanic
-        if (remainingThickness - this->rock.oceanic.thickness > 0) {
-            remainingThickness -= this->rock.oceanic.thickness;
-            mass += this->rock.oceanic.mass();
-            this->rock.oceanic.thickness = 0;
-        } else {
-            mass += remainingThickness * this->rock.oceanic.density;
-            this->rock.oceanic.thickness -= remainingThickness;
-            
-            erodedSegment.thickness = thickness;
-            erodedSegment.density = mass / thickness;
-            
-            return erodedSegment;
-        }
-        // still more remaining?!?!?!
-        // stop eroding...
-        erodedSegment.thickness = thickness - remainingThickness;
-        erodedSegment.density = mass / (thickness - remainingThickness);
-        return erodedSegment;
+    RockSegment PlateCell::erodeThickness(wb_float thickness){
+        RockColumn erodedRock = this->rock.removeThickness(thickness);
+        return combineSegments(erodedRock.sediment, combineSegments(erodedRock.continental, combineSegments(erodedRock.oceanic, erodedRock.root)));
     }
     
-    void PlateCell::homeostasis(const WorldAttributes worldAttributes, float timestep){
+    void PlateCell::homeostasis(const WorldAttributes worldAttributes, wb_float timestep){
+        
+        // crush any continental or oceanic crust above max thickness
+        if (this->rock.continental.get_thickness() > 70000) {
+            wb_float thicknessToHarden = this->rock.continental.get_thickness() - 65000; // buffer so we don't compute every step
+            this->rock.continental.set_thickness(65000);
+            
+            wb_float thicknessInRoot = thicknessToHarden * this->rock.continental.get_density() / this->rock.root.get_density();
+            this->rock.root.set_thickness(this->rock.root.get_thickness() + thicknessInRoot);
+        }
+        if (this->rock.oceanic.get_thickness() > 10000) {
+            wb_float thicknessToHarden = this->rock.oceanic.get_thickness() - 9000; // buffer so we don't compute every step
+            this->rock.oceanic.set_thickness(9000);
+            
+            wb_float thicknessInRoot = thicknessToHarden * this->rock.oceanic.get_density() / this->rock.root.get_density();
+            this->rock.root.set_thickness(this->rock.root.get_thickness() + thicknessInRoot);
+        }
+        
+        // melt root thickness if too much
+        if (this->rock.root.get_thickness() > 210000) {
+            this->rock.root.set_thickness(205000);
+        }
+        
+        
         this->baseOffset = -1 * this->rock.mass() / worldAttributes.mantleDensity;
         
         // harden any sediment over 3k meters
         // TODO add timestep
-        if (this->rock.sediment.thickness > 3000) {
-            float thicknessToHarden = (this->rock.sediment.thickness - 3000)*0.25*timestep;
+        if (this->rock.sediment.get_thickness() > 3000) {
+            wb_float thicknessToHarden = (this->rock.sediment.get_thickness() - 3000)*0.25*timestep;
             //float massHardened = this->rock.sediment.density * thicknessToHarden;
-            this->rock.sediment.thickness = this->rock.sediment.thickness - thicknessToHarden;
+            this->rock.sediment.set_thickness(this->rock.sediment.get_thickness() - thicknessToHarden);
             // eventually harden to continental density
             // TODO make sure continental density is initialized to appropriate value on all rock
-            RockSegment hardenedSediment;
-            hardenedSediment.thickness = thicknessToHarden;
-            hardenedSediment.density = this->rock.sediment.density;
+            RockSegment hardenedSediment(thicknessToHarden, this->rock.sediment.get_density());
             this->rock.continental = combineSegments(this->rock.continental, hardenedSediment);
         }
     }
     
-    PlateCell::PlateCell() : bIsSubducted(false), vertex(nullptr), lastNearest(nullptr) {
-        // valid (if not realistic) rock values;
-        this->rock.sediment.thickness = 0;
-        this->rock.sediment.density = 1;
-        
-        this->rock.continental.thickness = 0;
-        this->rock.continental.density = 1;
-        
-        this->rock.oceanic.thickness = 0;
-        this->rock.oceanic.density = 1;
-        
-        this->rock.root.thickness = 0;
-        this->rock.root.density = 1;
+    PlateCell::PlateCell(const GridVertex *ourVertex) : bIsSubducted(false), vertex(ourVertex), edgeInfo(nullptr), displacement(nullptr) {
     }
 }

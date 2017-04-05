@@ -5,19 +5,19 @@
 
 #include "RockColumn.hpp"
 
-#include <math.h>
+#include <cmath>
 
 namespace WorldBuilder {
     RockSegment combineSegments(RockSegment one, RockSegment two){
-        RockSegment result;
-        result.thickness = one.thickness + two.thickness;
-        if (fabsf(result.thickness) > float_epsilon) {
-            result.density = fabsf((one.density*one.thickness + two.density*two.thickness) / (result.thickness));
+        wb_float thickness;
+        wb_float density;
+        thickness = one.get_thickness() + two.get_thickness();
+        if (thickness > float_epsilon) {
+            density = std::abs((one.get_density()*one.get_thickness() + two.get_density()*two.get_thickness()) / thickness);
         } else {
-            result.thickness = 0;
-            result.density = one.density;
+            density = one.get_density();
         }
-        return result;
+        return RockSegment(thickness, density);
     }
     
     RockColumn accreteColumns(RockColumn one, RockColumn two){
@@ -29,63 +29,64 @@ namespace WorldBuilder {
         return result;
     }
     
-    RockColumn RockColumn::removeThickness(float thickness){
-        float remainingThickness = thickness;
+    RockColumn RockColumn::removeThickness(wb_float thickness){
+        wb_float remainingThickness = thickness;
         
         RockColumn removedColumn;
         // sediment
-        if (remainingThickness - this->sediment.thickness > 0) {
-            remainingThickness -= this->sediment.thickness;
+        if (remainingThickness - this->sediment.get_thickness() > 0) {
+            remainingThickness -= this->sediment.get_thickness();
             removedColumn.sediment = this->sediment;
-            this->sediment.thickness = 0;
+            this->sediment.set_thickness(0);
         } else {
-            this->sediment.thickness -= remainingThickness;
+            this->sediment.set_thickness(this->sediment.get_thickness() - remainingThickness);
             
-            removedColumn.sediment.thickness = remainingThickness;
-            removedColumn.sediment.density = this->sediment.density;
+            removedColumn.sediment.set_thickness(remainingThickness);
+            removedColumn.sediment.set_density(this->sediment.get_density());
             
             return removedColumn;
         }
         // continental
-        if (remainingThickness - this->continental.thickness > 0) {
-            remainingThickness -= this->continental.thickness;
+        if (remainingThickness - this->continental.get_thickness() > 0) {
+            remainingThickness -= this->continental.get_thickness();
             removedColumn.continental = this->continental;
-            this->continental.thickness = 0;
+            this->continental.set_thickness(0);
         } else {
-            this->continental.thickness -= remainingThickness;
+            this->continental.set_thickness(this->continental.get_thickness() - remainingThickness);
             
-            removedColumn.continental.thickness = remainingThickness;
-            removedColumn.continental.density = this->continental.density;
+            removedColumn.continental.set_thickness(remainingThickness);
+            removedColumn.continental.set_density(this->continental.get_density());
             
             return removedColumn;
         }
         // oceanic
-        if (remainingThickness - this->oceanic.thickness > 0) {
-            remainingThickness -= this->oceanic.thickness;
+        if (remainingThickness - this->oceanic.get_thickness() > 0) {
+            remainingThickness -= this->oceanic.get_thickness();
             removedColumn.oceanic = this->oceanic;
-            this->oceanic.thickness = 0;
+            this->oceanic.set_thickness(0);
         } else {
-            this->oceanic.thickness -= remainingThickness;
+            this->oceanic.set_thickness(this->oceanic.get_thickness() - remainingThickness);
             
-            removedColumn.oceanic.thickness = remainingThickness;
-            removedColumn.oceanic.density = this->oceanic.density;
+            removedColumn.oceanic.set_thickness(remainingThickness);
+            removedColumn.oceanic.set_density(this->oceanic.get_density());
             
             return removedColumn;
         }
+
         // root
-        
-        if (remainingThickness - this->root.thickness > 0) {
-            remainingThickness -= this->root.thickness;
+        if (remainingThickness - this->root.get_thickness() > 0) {
+            remainingThickness -= this->root.get_thickness();
             removedColumn.root = this->root;
-            this->root.thickness = 0;
+            this->root.set_thickness(0);
         } else {
-            this->root.thickness -= remainingThickness;
+            this->root.set_thickness(this->root.get_thickness() - remainingThickness);
             
-            removedColumn.root.thickness = remainingThickness;
-            removedColumn.root.density = this->root.density;
+            removedColumn.root.set_thickness(remainingThickness);
+            removedColumn.root.set_density(this->root.get_density());
             
             return removedColumn;
         }
+
         // hopefully we should have some left by now...
         return removedColumn;
     }

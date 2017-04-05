@@ -7,9 +7,13 @@
 #define Defines_h
 
 #include <chrono>
+#include <stdexcept>
 
 namespace WorldBuilder {
-    static const float float_epsilon = 0.00001;
+    
+    typedef double wb_float;
+    
+    static const wb_float float_epsilon = 0.00001;
     
 /*************** World Attributes ***************/
     struct WorldAttributes {
@@ -37,16 +41,11 @@ namespace WorldBuilder {
     };
     
     struct WorldUpdateTask  {
-        TaskTracker move;
-        TaskTracker cast;
-        TaskTracker homeostasis;
-        TaskTracker collision;
-        TaskTracker superCycle;
+        TaskTracker movement;
+        TaskTracker transition;
+        TaskTracker modification;
         
-        TaskTracker erode;
-        TaskTracker plateRemoval;
-        
-        float timestepUsed;
+        wb_float timestepUsed;
     };
 }
 
