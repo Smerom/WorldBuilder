@@ -15,6 +15,8 @@ namespace WorldBuilder {
     
     static const wb_float float_epsilon = 0.00001;
     
+    static const wb_float min_interaction_age = 10.0;
+    
 /*************** World Attributes ***************/
     struct WorldAttributes {
         float mantleDensity;

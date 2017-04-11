@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <utility>
 #include <cmath>
+#include <tuple>
 #include "Defines.h"
 
 namespace WorldBuilder {
@@ -57,7 +58,7 @@ namespace WorldBuilder {
         }
         
         wb_float length() const {
-            return sqrt(this->coords[0]*this->coords[0] + this->coords[1]*this->coords[1] + this->coords[2]*this->coords[2]);
+            return std::sqrt(this->coords[0]*this->coords[0] + this->coords[1]*this->coords[1] + this->coords[2]*this->coords[2]);
         }
         
     };
@@ -73,6 +74,10 @@ namespace WorldBuilder {
             retVal.coords[1] = rows[1][idx];
             retVal.coords[2] = rows[2][idx];
             return retVal;
+        };
+        
+        wb_float determinant(){
+            return rows[0][0]*rows[1][1]*rows[2][2] + rows[0][1]*rows[1][2]*rows[2][0] + rows[0][2]*rows[1][0]*rows[2][1] - rows[0][2]*rows[1][1]*rows[2][0] - rows[0][1]*rows[1][0]*rows[2][2] - rows[0][0]*rows[1][2]*rows[2][1];
         };
     };
     

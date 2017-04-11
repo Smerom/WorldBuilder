@@ -24,12 +24,19 @@ namespace WorldBuilder {
         MaterialFlowNode* destination;
         wb_float weight;
         wb_float materialHeight;
+    public:
+        wb_float get_materialHeight() {
+            return materialHeight;
+        }
     };
     
     class MaterialFlowNode {
         wb_float materialHeight;
         wb_float suspendedMaterialHeight;
     public:
+        
+        MaterialFlowNode() : materialHeight(0), suspendedMaterialHeight(0), touched(false), offsetHeight(0){};
+        
         std::vector<std::shared_ptr<FlowEdge>> outflowTargets;
         std::vector<std::shared_ptr<FlowEdge>> inflowTargets;
         bool touched;
@@ -61,6 +68,14 @@ namespace WorldBuilder {
             materialHeight = height;
         }
         
+        wb_float get_suspendedMaterialHeight() const{
+            return suspendedMaterialHeight;
+        }
+        
+        wb_float elevation() const{
+            return materialHeight + offsetHeight + suspendedMaterialHeight; // include suspended material in elevation as it is effectively part of the cell when not flowing the graph
+        }
+        
         bool checkWeight() const;
         
         //void touchConnectedSubgraph(); // for finding roots if I end up doing that
@@ -71,20 +86,17 @@ namespace WorldBuilder {
         friend class World;
     private:
         size_t nodeCount;
-        MaterialFlowNode* nodes;
+        std::vector<MaterialFlowNode> nodes;
         
     public:
-        MaterialFlowGraph(size_t count) : nodeCount(count) {
-            this->nodes = new MaterialFlowNode[count];
-        }
-        
-        ~MaterialFlowGraph(){
-            delete [] this->nodes;
-        }
+        MaterialFlowGraph(size_t count) : nodeCount(count), nodes(count) {};
         
         void flowAll();
         
         wb_float totalMaterial() const;
+        
+        wb_float inTransitOutMaterial() const;
+        wb_float inTransitInMaterial() const;
         
         bool checkWeights() const;
         

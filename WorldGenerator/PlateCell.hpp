@@ -6,7 +6,7 @@
 #ifndef PlateCell_hpp
 #define PlateCell_hpp
 
-#include <map>
+#include <unordered_map>
 
 #include "RockColumn.hpp"
 #include "Grid.hpp"
@@ -29,8 +29,8 @@ namespace WorldBuilder {
     };
     class EdgeCellInfo {
     public:
-        std::map<uint64_t, EdgeNeighbor> otherPlateNeighbors; // lower 32 bits are cell index, higher are plate index
-        std::map<uint32_t, uint32_t> otherPlateLastNearest; // plate -> cell index
+        std::unordered_map<uint64_t, EdgeNeighbor> otherPlateNeighbors; // lower 32 bits are cell index, higher are plate index
+        std::unordered_map<uint32_t, uint32_t> otherPlateLastNearest; // plate -> cell index
     };
     
     class DisplacementInfo {
@@ -68,6 +68,8 @@ namespace WorldBuilder {
         std::shared_ptr<DisplacementInfo> displacement;
         
         MaterialFlowNode* flowNode;
+        
+        wb_float age;
         
         
         PlateCell(const GridVertex* vertex);

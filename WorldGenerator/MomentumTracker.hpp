@@ -11,21 +11,17 @@
 
 namespace WorldBuilder {
     class AngularMomentumTracker {
-        size_t plateCount;
         std::unordered_map<uint32_t, std::shared_ptr<Plate>> plates;
-        wb_float* startingMomentumMagnitude;
-        wb_float* momentumDeltaMagnitude; // 2d array from i to j
-        size_t* startingSurfaceCellCount;
-        size_t* colidedSurfaceCellCount;
+        std::unordered_map<uint64_t, wb_float> momentumTransfers; // from plate with id of top 32 bits to plate of lower 32 bits
+        std::unordered_map<uint64_t, size_t> collidedCellCount; // from plate with id of top 32 bits to plate of lower 32 bits
+        std::unordered_map<uint32_t, wb_float> startingMomentum;
+        std::unordered_map<uint32_t, size_t> startingCellCount;
     public:
         AngularMomentumTracker(std::unordered_map<uint32_t, std::shared_ptr<Plate>> plates);
-        ~AngularMomentumTracker();
         
         // momentum modification
-        void transferMomentumMagnitude(size_t source, size_t destination, wb_float magnitude);
-        void removeMomentumFromPlate(size_t plateIndex, wb_float magnitude);
-        
-        void addCollision(size_t i, size_t j);
+        void transferMomentumOfCell(std::shared_ptr<Plate> source, std::shared_ptr<Plate> destination, std::shared_ptr<PlateCell> cell);
+        void addCollision(std::shared_ptr<Plate> source, std::shared_ptr<Plate> destination);
         
         void commitTransfer();
         

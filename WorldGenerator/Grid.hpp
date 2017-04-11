@@ -8,9 +8,6 @@
 #define Grid_hpp
 
 #include "Basic.pb.h"
-
-#include <iostream>
-
 #include "math.hpp"
 
 namespace WorldBuilder {
@@ -22,7 +19,7 @@ namespace WorldBuilder {
         
     public:
         Grid(const api::Grid* wingedGrid);
-        Grid(size_t vertexCount);
+        Grid(uint32_t vertexCount);
         
         
         void addGrpcGridPart(const api::Grid *theGrid);
@@ -30,7 +27,7 @@ namespace WorldBuilder {
         void buildCenters();
         
     /*************** Getters ***************/
-        size_t verts_size(){
+        uint32_t verts_size(){
             return verts.size();
         }
         const std::vector<GridVertex>& get_vertices(){
@@ -45,7 +42,7 @@ namespace WorldBuilder {
         friend Grid;
     /*************** Member Variables  ***************/
     private:
-        size_t index;
+        uint32_t index;
         Vec3 vector;
         Vec3 neighborCenter;
         std::vector<GridVertex *> neighbors;
@@ -56,7 +53,7 @@ namespace WorldBuilder {
         const Vec3 get_vector() const {
             return this->vector;
         }
-        size_t get_index() const{
+        uint32_t get_index() const{
             return index;
         }
         const std::vector<GridVertex *>& get_neighbors() const {

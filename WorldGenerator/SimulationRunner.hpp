@@ -7,6 +7,7 @@
 #define SimulationRunner_hpp
 
 #include <memory>
+#include "RockColumn.hpp"
 
 namespace WorldBuilder {
     class Generator;
@@ -20,6 +21,7 @@ namespace WorldBuilder {
         std::shared_ptr<World> theWorld;
         std::shared_ptr<Generator> theGenerator;
         
+        RockColumn initialRock;
         
         bool haveGenerated;
 

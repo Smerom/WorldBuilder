@@ -68,6 +68,8 @@ namespace WorldBuilder {
         RockColumn removeThickness(wb_float thickness);
     };
     RockColumn accreteColumns(RockColumn one, RockColumn two);
+    
+    void logColumnChange(RockColumn initial, RockColumn final, bool logSedCont, bool logNet);
 }
 
 #endif /* RockColumn_hpp */

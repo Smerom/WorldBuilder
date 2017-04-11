@@ -40,7 +40,7 @@ namespace WorldBuilder {
         }
     }
     
-    Plate::Plate(uint32_t initialCellCount, uint32_t ourId) : rotationMatrix(math::identityMatrix()), id(ourId), centerVertex(nullptr), maxEdgeAngle(0) {
+    Plate::Plate(uint32_t initialCellCount, uint32_t ourId) : rotationMatrix(math::identityMatrix()), centerVertex(nullptr), maxEdgeAngle(0), id(ourId) {
         this->cells.reserve(initialCellCount);
         this->angularSpeed = 0;
     }

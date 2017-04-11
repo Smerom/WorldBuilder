@@ -4,9 +4,9 @@
 //
 
 
+
 #include "math.hpp"
-#include <cmath>
-#include "Defines.h"
+
 #include <iostream>
 
 namespace WorldBuilder {
@@ -15,12 +15,11 @@ namespace WorldBuilder {
         wb_float distanceFromPole(const Vec3 position, const Vec3 pole){
             wb_float x = position[0]*pole[0] + position[1]*pole[1] + position[2]*pole[2];
             wb_float xSquared = x*x;
-            if (xSquared > 1 || isnan(xSquared)){
-                //std::cout << "Distance from pole faliure" << std::endl;
+            if (xSquared > 1 || std::isnan(xSquared)){
                 return 0;
             }
             // sin(arccos(x)) = sqrt(1-x^2)
-            return sqrtf(1 - xSquared);
+            return std::sqrt(1 - xSquared);
         }
         
         wb_float squareDistanceBetween3Points(const Vec3 point1, const Vec3 point2){
@@ -38,7 +37,7 @@ namespace WorldBuilder {
             y = point1[1] - point2[1];
             z = point1[2] - point2[2];
             
-            return sqrtf(x*x + y*y + z*z);
+            return std::sqrt(x*x + y*y + z*z);
         };
         
         Vec3 normalize3Vector(Vec3 vector){
@@ -55,7 +54,7 @@ namespace WorldBuilder {
         }; // normalize3Vector
         std::pair<Vec3, wb_float> normalize3VectorWithScale(Vec3 vector){
             std::pair<Vec3, wb_float> result;
-            wb_float scale = sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
+            wb_float scale = std::sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
             if (scale * scale < float_epsilon){
                 result.second = 0;
                 return result;
@@ -70,7 +69,17 @@ namespace WorldBuilder {
         }
         
         wb_float angleBetweenUnitVectors(const Vec3 vector1, const Vec3 vector2){
-            return acos(vector1.dot(vector2));
+//#warning Debug testing. Doing extra work
+//            wb_float normalizedAngle = std::acos(normalize3Vector(vector1).dot(normalize3Vector(vector2)));
+            wb_float angle = std::acos(vector1.dot(vector2));
+//            if (!std::isfinite(angle) || !std::isfinite(normalizedAngle) || std::abs(angle - normalizedAngle) > cellSmallAngle / 10) {
+//                std::cout << "Difference in angle is: " << std::abs(angle - normalizedAngle) << std::endl;
+//                std::cout << "Vector1 length: " << vector1.length() << " Vector2 length: " << vector2.length() << std::endl;
+//                throw std::logic_error("Bad vectors");
+//            }
+            
+            
+            return angle;
         }
         
         
@@ -102,8 +111,8 @@ namespace WorldBuilder {
             Matrix3x3 rotationMatrix;
             
             wb_float cosTheta, sinTheta;
-            cosTheta = cos(angleRadians);
-            sinTheta = sin(angleRadians);
+            cosTheta = std::cos(angleRadians);
+            sinTheta = std::sin(angleRadians);
             // set 0, 0
             rotationMatrix.rows[0].coords[0] = cosTheta + ux*ux*(1-cosTheta);
             // set 0, 1
@@ -122,6 +131,11 @@ namespace WorldBuilder {
             rotationMatrix.rows[2].coords[1] = uz*uy*(1-cosTheta) + ux*sinTheta;
             // set 2, 2
             rotationMatrix.rows[2].coords[2] = cosTheta + uz*uz*(1-cosTheta);
+            
+            if (std::abs(rotationMatrix.determinant() - 1) > float_epsilon) {
+                std::cout << "Determinant of " << rotationMatrix.determinant() << std::endl;
+                //throw std::logic_error("bad rotation");
+            }
             
             return rotationMatrix;
         }; // rotationMatrixAboutAxis
@@ -159,15 +173,18 @@ namespace WorldBuilder {
             result.rows[2].coords[0] = vectorMul(a[2], b.column(0));
             result.rows[2].coords[1] = vectorMul(a[2], b.column(1));
             result.rows[2].coords[2] = vectorMul(a[2], b.column(2));
+            if (std::abs(result.determinant() - 1) > float_epsilon) {
+                //std::cout << "Determinant of " << result.determinant() << std::endl;
+                //throw std::logic_error("bad rotation after multiplication");
+            }
             return result;
         }
-        
         
         wb_float circleIntersectionArea(wb_float distance, wb_float radius){
             if (distance > 2*radius) {
                 return 0;
             }
-            return 2*radius*radius*acos(distance/(2*radius)) - 1/2 * distance * sqrt(4*radius*radius - distance*distance);
+            return 2*radius*radius*acos(distance/(2*radius)) - 1/2 * distance * std::sqrt(4*radius*radius - distance*distance);
         }
         
         std::tuple<Vec3, wb_float, bool> edgeIntersection(Vec3 p, Vec3 q, Vec3 a, Vec3 v) {

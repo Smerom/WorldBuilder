@@ -8,15 +8,23 @@
 #define World_hpp
 
 #include <unordered_map>
+#include <limits>
 
 #include "RockColumn.hpp"
 #include "Plate.hpp"
 #include "Random.hpp"
 #include "Defines.h"
-#include "MomentumTracker.hpp"
 #include "ErosionFlowGraph.hpp"
+#include "MomentumTracker.hpp"
 
 namespace WorldBuilder {
+    struct LocationInfo {
+        wb_float elevation;
+        wb_float sediment;
+        uint32_t plateId;
+        
+        LocationInfo() : elevation(0), sediment(0), plateId(std::numeric_limits<uint32_t>::max()){};
+    };
     /*************** Base World ***************/
     /*  Responsible for running the world forward through time
      *  This base implements common functions such as erosion and plate movement
@@ -45,7 +53,7 @@ namespace WorldBuilder {
         wb_float supercontinentCycleDuration;
         uint32_t desiredPlateCount;
         
-        //AngularMomentumTracker *momentumTransfer;
+        std::shared_ptr<AngularMomentumTracker> momentumTracker;
         
         wb_float cellDistanceMeters;
         
@@ -86,7 +94,7 @@ namespace WorldBuilder {
         void renormalizeAllPlates();
         void renormalizePlate(std::shared_ptr<Plate> thePlate);
         
-        void riftPlate(std::shared_ptr<Plate> plate);
+        std::vector<std::shared_ptr<PlateCell>> riftPlate(std::shared_ptr<Plate> plate);
         
         void homeostasis(wb_float timestep);
         void supercontinentCycle();
@@ -132,7 +140,11 @@ namespace WorldBuilder {
             return this->cellDistanceMeters;
         }
         
-        wb_float get_elevation(Vec3 location);
+        LocationInfo get_locationInfo(Vec3 location);
+        
+        bool validate();
+        
+        RockColumn netRock();
         
     }; // class World
     

@@ -25,6 +25,8 @@ namespace WorldBuilder {
             std::cout << "Intitial Generation took " << generationTracker.duration().count() << " seconds." << std::endl;
             
             this->haveGenerated = true;
+            
+            this->initialRock = this->theWorld->netRock();
         }
         
         // copied from old, define input vars
@@ -34,6 +36,9 @@ namespace WorldBuilder {
         std::vector<WorldUpdateTask> tasks;
         for (uint_fast32_t i = 0; i < stepCount; i++) {
             tasks.push_back(this->theWorld->progressByTimestep(minTimestep));
+            RockColumn newNet = this->theWorld->netRock();
+            std::cout << "Rock change after full round:" << std::endl;
+            logColumnChange(this->initialRock, newNet, true, false);
         }
         if (this->shouldLogRunTiming == true) {
             std::cout.precision(5);

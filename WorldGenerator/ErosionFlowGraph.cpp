@@ -6,6 +6,8 @@
 
 #include "ErosionFlowGraph.hpp"
 
+#include <iostream>
+
 namespace WorldBuilder {
     void MaterialFlowNode::upTreeFlow(){
         if (this->touched == false) {
@@ -14,26 +16,25 @@ namespace WorldBuilder {
             
             // flow up
             wb_float suspendedMaterial = 0;
-            for (std::vector<std::shared_ptr<FlowEdge>>::iterator flowEdge = this->inflowTargets.begin();
-                 flowEdge != this->inflowTargets.end();
-                 flowEdge++)
+            for (auto&& flowEdge : this->inflowTargets)
             {
-                (*flowEdge)->source->upTreeFlow();
+                flowEdge->source->upTreeFlow();
                 // collect material
-                suspendedMaterial += (*flowEdge)->materialHeight;
+                suspendedMaterial += flowEdge->materialHeight;
+                flowEdge->materialHeight = 0;
             }
             
             // TODO, move to specialized flow node
             // TODO, dynamic sealevel
-//            if (this->offsetHeight + this->materialHeight < 9620 - 300) {
-//                //
-//                wb_float fillAmount = 9620 - 300 - (this->offsetHeight + this->materialHeight);
-//                if (fillAmount > suspendedMaterial) {
-//                    fillAmount = suspendedMaterial;
-//                }
-//                suspendedMaterial -= 0.95*fillAmount;
-//                this->materialHeight += 0.95*fillAmount;
-//            }
+            if (this->elevation() < 9620 - 300) {
+                //
+                wb_float fillAmount = 9620 - 300 - this->elevation();
+                if (fillAmount > suspendedMaterial) {
+                    fillAmount = suspendedMaterial;
+                }
+                suspendedMaterial -= 0.95*fillAmount;
+                this->materialHeight += 0.95*fillAmount;
+            }
             
             // add material from self
             suspendedMaterial += this->suspendedMaterialHeight;
@@ -41,12 +42,10 @@ namespace WorldBuilder {
             
             // move material
             wb_float totalMaterialMoved = 0;
-            for (std::vector<std::shared_ptr<FlowEdge>>::iterator flowEdge = this->outflowTargets.begin();
-                 flowEdge != this->outflowTargets.end();
-                 flowEdge++)
+            for (auto&& flowEdge : this->outflowTargets)
             {
-                (*flowEdge)->materialHeight = (*flowEdge)->weight * suspendedMaterial*0.99;
-                totalMaterialMoved += (*flowEdge)->weight * suspendedMaterial*0.99;
+                flowEdge->materialHeight = flowEdge->weight * suspendedMaterial*0.99;
+                totalMaterialMoved += flowEdge->weight * suspendedMaterial*0.99;
             }
             
             if (totalMaterialMoved - suspendedMaterial > float_epsilon) {
@@ -63,14 +62,18 @@ namespace WorldBuilder {
     }// MaterialFlowNode::upTreeFlow()
     
     bool MaterialFlowNode::checkWeight() const {
+        if (this->outflowTargets.size() == 0) {
+            return true;
+        }
         wb_float total = 0;
-        for (auto downhillEdge = this->outflowTargets.begin(); downhillEdge != this->outflowTargets.end(); downhillEdge++) {
-            if ((*downhillEdge)->weight < 0) {
+        for (auto&& downhillEdge : this->outflowTargets) {
+            if (downhillEdge->weight < 0) {
                 throw std::logic_error("Negative edge weight!");
             }
-            total += (*downhillEdge)->weight;
+            total += downhillEdge->weight;
         }
-        if (total - 1 > float_epsilon) {
+        if (std::abs(total - 1) > float_epsilon) {
+            std::cout << "Total weight is: " << total << std::endl;
             throw "eeerorrr";
         }
         return true;
@@ -88,10 +91,30 @@ namespace WorldBuilder {
     wb_float MaterialFlowGraph::totalMaterial() const {
         wb_float total = 0;
         for (size_t index = 0; index < this->nodeCount; index++) {
-            total += this->nodes[index].get_materialHeight();
+            total += this->nodes[index].get_materialHeight() + this->nodes[index].get_suspendedMaterialHeight();
         }
         return total;
     }
+    
+    wb_float MaterialFlowGraph::inTransitOutMaterial() const {
+        wb_float total = 0;
+        for (size_t index = 0; index < this->nodeCount; index++) {
+            for(auto&& outflowNode : this->nodes[index].outflowTargets){
+                total += outflowNode->get_materialHeight();
+            }
+        }
+        return total;
+    }
+    wb_float MaterialFlowGraph::inTransitInMaterial() const {
+        wb_float total = 0;
+        for (size_t index = 0; index < this->nodeCount; index++) {
+            for(auto&& inflowNode : this->nodes[index].inflowTargets){
+                total += inflowNode->get_materialHeight();
+            }
+        }
+        return total;
+    }
+    
     
     void MaterialFlowGraph::flowAll(){
         // clear touched status

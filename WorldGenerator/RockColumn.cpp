@@ -5,7 +5,7 @@
 
 #include "RockColumn.hpp"
 
-#include <cmath>
+#include <iostream>
 
 namespace WorldBuilder {
     RockSegment combineSegments(RockSegment one, RockSegment two){
@@ -89,6 +89,29 @@ namespace WorldBuilder {
 
         // hopefully we should have some left by now...
         return removedColumn;
+    }
+    
+    void logColumnChange(RockColumn initial, RockColumn final, bool logSedCont, bool logNet){
+        std::cout.precision(6);
+        if (logNet) {
+            if (logSedCont) {
+                std::cout << "Sed+Cont is    " << std::scientific << final.sediment.get_thickness() + final.continental.get_thickness() << " or " << std::fixed << (final.sediment.get_thickness() + final.continental.get_thickness()) / initial.continental.get_thickness() << " of Origional" << std::endl;
+            } else {
+                std::cout << "Sediment is    " << std::scientific << final.sediment.get_thickness() << " or " << std::fixed << final.sediment.get_thickness() / initial.sediment.get_thickness() << " of Origional" << std::endl;
+            }
+            std::cout << "Continental is " << std::scientific << final.continental.get_thickness() << " or " << std::fixed << final.continental.get_thickness() / initial.continental.get_thickness() << " of Origional" << std::endl;
+            std::cout << "Oceanic is     " << std::scientific << final.oceanic.get_thickness() << " or " << std::fixed << final.oceanic.get_thickness() / initial.oceanic.get_thickness() << " of Origional" << std::endl;
+            std::cout << "Root is        " << std::scientific << final.root.get_thickness() << " or " << std::fixed << final.root.get_thickness() / initial.root.get_thickness() << " of Origional" << std::endl;
+        } else {
+            if (logSedCont) {
+                std::cout << "Sed+Cont change is    " << std::scientific << final.sediment.get_thickness() + final.continental.get_thickness() - initial.sediment.get_thickness() - initial.continental.get_thickness() << " or " << std::fixed << (final.sediment.get_thickness() + final.continental.get_thickness()) / initial.continental.get_thickness() << " of Origional" << std::endl;
+            } else {
+                std::cout << "Sediment change is    " << std::scientific << final.sediment.get_thickness() - initial.sediment.get_thickness() << " or " << std::fixed << final.sediment.get_thickness() / initial.sediment.get_thickness() << " of Origional" << std::endl;
+            }
+            std::cout << "Continental change is " << std::scientific << final.continental.get_thickness() - initial.continental.get_thickness() << " or " << std::fixed << final.continental.get_thickness() / initial.continental.get_thickness() << " of Origional" << std::endl;
+            std::cout << "Oceanic change is     " << std::scientific << final.oceanic.get_thickness() - initial.oceanic.get_thickness() << " or " << std::fixed << final.oceanic.get_thickness() / initial.oceanic.get_thickness() << " of Origional" << std::endl;
+            std::cout << "Root change is        " << std::scientific << final.root.get_thickness() - initial.root.get_thickness() << " or " << std::fixed << final.root.get_thickness() / initial.root.get_thickness() << " of Origional" << std::endl;
+        }
     }
 }
 

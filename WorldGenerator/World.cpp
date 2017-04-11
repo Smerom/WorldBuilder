@@ -6,12 +6,22 @@
 
 #include "World.hpp"
 
+#include <iostream>
 #include <limits>
 #include <thread>
 
 namespace WorldBuilder {
     
-    const wb_float erosionRate = 0.05; // per million years
+    // per million years
+    wb_float erosionRate(wb_float elevationAboveSealevel) {
+        if (elevationAboveSealevel < 1000) {
+            return 0.05;
+        } else if (elevationAboveSealevel < 4000) {
+            return 0.10;
+        } else {
+            return 0.20;
+        }
+    }
     
     // wants somewhere to go
     wb_float World::randomPlateDensityOffset() {
@@ -26,6 +36,8 @@ namespace WorldBuilder {
         if (this->plates.size() == 0) {
             return updateTask;
         }
+        
+        this->validate();
         
         // update plate indices?
         
@@ -58,19 +70,32 @@ namespace WorldBuilder {
 
         
         // movement phase
+        RockColumn initial, final;
+        initial = this->netRock();
         updateTask.movement.start();
         this->columnMovementPhase(timestep);
         updateTask.movement.end();
+        final = this->netRock();
+//        std::cout << "Rock change after movement:" << std::endl;
+//        logColumnChange(initial, final, false, false);
+        initial = final;
         
         // transistion phase
         updateTask.transition.start();
         this->transitionPhase(timestep);
         updateTask.transition.end();
+        final = this->netRock();
+//        std::cout << "Rock change after transition:" << std::endl;
+//        logColumnChange(initial, final, false, false);
+        initial = final;
         
         // modification phase
         updateTask.modification.start();
         this->columnModificationPhase(timestep);
         updateTask.modification.end();
+        final = this->netRock();
+//        std::cout << "Rock change after modification:" << std::endl;
+//        logColumnChange(initial, final, false, false);
         
         return updateTask;
     }
@@ -79,6 +104,8 @@ namespace WorldBuilder {
         // move our plates
         this->movePlates(timestep);
         
+        // set up momentum
+        this->momentumTracker = std::make_shared<AngularMomentumTracker>(this->plates);
         
         this->computeEdgeInteraction(timestep);
         
@@ -99,21 +126,41 @@ namespace WorldBuilder {
         this->renormalizeAllPlates();
         
         // rifting
+        std::vector<std::pair<std::shared_ptr<Plate>, std::vector<std::shared_ptr<PlateCell>>>> cellsToAddToPlates;
         for (auto&& plateIt : this->plates) {
-            this->riftPlate(plateIt.second);
+            cellsToAddToPlates.push_back(std::make_pair(plateIt.second, this->riftPlate(plateIt.second)));
+        }
+        for (auto&& pairIt : cellsToAddToPlates) {
+            for (auto&& cellAddIt : pairIt.second) {
+                pairIt.first->cells.insert({cellAddIt->get_vertex()->get_index(), cellAddIt});
+            }
+        }
+        
+        // update momentum
+        this->momentumTracker->commitTransfer();
+        
+        // delete plates that no longer exist
+        std::vector<uint32_t> platesToDelete;
+        for (auto&& plateIt : this->plates) {
+            if (plateIt.second->cells.size() == 0) {
+                platesToDelete.push_back(plateIt.first);
+            }
+        }
+        for (auto&& plateIndex : platesToDelete) {
+            this->plates.erase(plateIndex);
         }
         
         // split in supercontinent if needed
         this->supercontinentCycle();
         
         // update edges
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            this->updatePlateEdges(plateIt->second);
+        for (auto&& plateIt : this->plates) {
+            this->updatePlateEdges(plateIt.second);
         }
         
         // knit back together
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            this->knitPlates(plateIt->second);
+        for (auto&& plateIt : this->plates) {
+            this->knitPlates(plateIt.second);
         }
         
         // float it!
@@ -122,25 +169,35 @@ namespace WorldBuilder {
     
     void World::columnModificationPhase(wb_float timestep){
         // thermal first
+        //RockColumn initial, final;
+        //initial = this->netRock();
         this->erodeThermalSmoothing(timestep);
+        //final = this->netRock();
+//        std::cout << " Change after thermal erosion: " << std::endl;
+//        logColumnChange(initial, final, false, false);
         
+        //initial = final;
         this->erodeSedimentTransport(timestep);
+        //final = this->netRock();
+//        std::cout << "Change after sediment transport: " << std::endl;
+//        logColumnChange(initial, final, false, false);
     }
     
 /****************************** Transistion ******************************/
-    void World::riftPlate(std::shared_ptr<Plate> plate) {
+    std::vector<std::shared_ptr<PlateCell>> World::riftPlate(std::shared_ptr<Plate> plate) {
+        std::vector<std::shared_ptr<PlateCell>> cellsToAdd;
         
         std::vector<std::shared_ptr<Plate>> interactablePlates;
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate>& testPlate = plateIt->second;
+        for (auto&& plateIt : this->plates) {
+            std::shared_ptr<Plate>& testPlate = plateIt.second;
             // ignore self
             if (testPlate != plate) {
                 // test interacability between plates
                 Matrix3x3 targetToTest = math::matrixMul(math::transpose(testPlate->rotationMatrix), plate->rotationMatrix);
                 // if the plates max extent overlap, test edges
                 Vec3 testCenter = math::affineRotaionMulVec(targetToTest, plate->center);
-                wb_float testAngle = math::angleBetweenUnitVectors(plate->center, testCenter);
-                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle) {
+                wb_float testAngle = math::angleBetweenUnitVectors(testPlate->center, testCenter);
+                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle || std::isnan(testAngle)) {
                     // some cells may interact, add to interactables
                     interactablePlates.push_back(testPlate);
                 }
@@ -156,7 +213,7 @@ namespace WorldBuilder {
                 // if the plates max extent overlap, test edges
                 Vec3 riftInTest = math::affineRotaionMulVec(targetToTest, this->worldGrid->get_vertices()[riftIndex].get_vector());
                 wb_float testAngle = math::angleBetweenUnitVectors(testPlate->center, riftInTest);
-                if (testAngle < testPlate->maxEdgeAngle) {
+                if (testAngle < testPlate->maxEdgeAngle || std::isnan(testAngle)) {
                     // may interact
                     // could grab better hint from neighbor
                     uint32_t hint = 0;
@@ -169,14 +226,26 @@ namespace WorldBuilder {
                     auto cellTestIt = testPlate->cells.find(indexInTest);
                     if (cellTestIt != testPlate->cells.end()) {
                         cellFound = true;
-                        break;
                     } else {
                         auto testRift = testPlate->riftingTargets.find(indexInTest);
                         if (testRift != testPlate->riftingTargets.end()) {
                             cellFound = true;
-                            break;
+                        } else {
+                            // check all neighbors
+                            for(auto&& neighborIt : this->worldGrid->get_vertices()[indexInTest].get_neighbors()) {
+                                uint32_t neighborIndex = neighborIt->get_index();
+                                // only need to check rifting targets, as the nearest index would have been in rifting at least otherwise
+                                auto testNeighborRift = testPlate->riftingTargets.find(neighborIndex);
+                                if (testNeighborRift != testPlate->riftingTargets.end()) {
+                                    cellFound = true;
+                                    break;
+                                }
+                            }
                         }
                     }
+                }
+                if (cellFound) {
+                    break;
                 }
             }
             if (!cellFound) {
@@ -184,9 +253,10 @@ namespace WorldBuilder {
                 std::shared_ptr<PlateCell> riftedCell = std::make_shared<PlateCell>(&this->worldGrid->get_vertices()[riftIndex]);
                 riftedCell->rock = this->divergentOceanicColumn;
                 
-                plate->cells[riftIndex] = riftedCell;
+                cellsToAdd.push_back(riftedCell);
             }
         }
+        return cellsToAdd;
     }
     
     void World::updatePlateEdges(std::shared_ptr<Plate> plate) {
@@ -198,8 +268,8 @@ namespace WorldBuilder {
         
         // find the center of the plate, hope it's close tot where the smallest bounding circle's would be
         Vec3 center;
-        for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
-            std::shared_ptr<PlateCell> cell = cellIt->second;
+        for (auto&& cellIt : plate->cells) {
+            std::shared_ptr<PlateCell> cell = cellIt.second;
             
             
             
@@ -208,8 +278,8 @@ namespace WorldBuilder {
             
             // determine edges
             bool isEdge = false;
-            for (auto neighborIt = cell->get_vertex()->get_neighbors().begin(); neighborIt != cell->get_vertex()->get_neighbors().end(); neighborIt++) {
-                uint32_t index = (*neighborIt)->get_index();
+            for (auto&& neighborIt : cell->get_vertex()->get_neighbors()) {
+                uint32_t index = neighborIt->get_index();
                 
                 // test if index is in plate
                 auto neighborCellIt = plate->cells.find(index);
@@ -249,10 +319,10 @@ namespace WorldBuilder {
         
         // find max distance
         plate->maxEdgeAngle = 0; // reset max distance
-        for (auto edgeIt = plate->edgeCells.begin(); edgeIt != plate->edgeCells.end(); edgeIt++) {
-            std::shared_ptr<PlateCell> edge = edgeIt->second;
+        for (auto&& edgeIt : plate->edgeCells) {
+            std::shared_ptr<PlateCell> edge = edgeIt.second;
             wb_float testDistance = math::angleBetweenUnitVectors(plate->center, edge->get_vertex()->get_vector());
-            if (testDistance > plate->maxEdgeAngle) {
+            if (testDistance > plate->maxEdgeAngle || std::isnan(testDistance)) {
                 plate->maxEdgeAngle = testDistance;
             }
         }
@@ -262,22 +332,22 @@ namespace WorldBuilder {
     
     void World::knitPlates(std::shared_ptr<Plate> plate) {
         
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate> testPlate = plateIt->second;
+        for (auto&& plateIt : this->plates) {
+            std::shared_ptr<Plate> testPlate = plateIt.second;
             // ignore self
             if (testPlate != plate) {
                 // test interacability between plates
                 Matrix3x3 targetToTest = math::matrixMul(math::transpose(testPlate->rotationMatrix), plate->rotationMatrix);
                 // if the plates max extent overlap, test edges
                 Vec3 testCenter = math::affineRotaionMulVec(targetToTest, plate->center);
-                wb_float testAngle = math::angleBetweenUnitVectors(plate->center, testCenter);
-                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle) {
+                wb_float testAngle = math::angleBetweenUnitVectors(testPlate->center, testCenter);
+                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle || std::isnan(testAngle)) {
                     // some cells may interact
-                    for (auto edgeIt = plate->edgeCells.begin(); edgeIt != plate->edgeCells.end(); edgeIt++) {
-                        std::shared_ptr<PlateCell> edgeCell = edgeIt->second;
+                    for (auto&& edgeIt : plate->edgeCells) {
+                        std::shared_ptr<PlateCell> edgeCell = edgeIt.second;
                         Vec3 targetEdgeInTest = math::affineRotaionMulVec(targetToTest, edgeCell->get_vertex()->get_vector());
                         wb_float angleToCenter = math::angleBetweenUnitVectors(testPlate->center, targetEdgeInTest);
-                        if (angleToCenter < testPlate->maxEdgeAngle) {
+                        if (angleToCenter < testPlate->maxEdgeAngle || std::isnan(angleToCenter)) {
                             // edge cell may be close enough to interact
                             uint32_t lastNearestForPlate = 0;
                             auto lastNearestIt = edgeCell->edgeInfo->otherPlateLastNearest.find(testPlate->id);
@@ -291,8 +361,8 @@ namespace WorldBuilder {
                             edgeCell->edgeInfo->otherPlateLastNearest[testPlate->id] = nearestGridIndex;
                             
                             // check if it is an edge, and neighbors
-                            auto testEdgeIt = testPlate->edgeCells.find(nearestGridIndex);
-                            if (testEdgeIt != testPlate->edgeCells.end()) {
+                            auto testEdgeIt = testPlate->cells.find(nearestGridIndex);
+                            if (testEdgeIt != testPlate->cells.end()) {
                                 std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
                                 uint64_t neighborKey;
                                 neighborKey = ((uint64_t)testPlate->id << 32) + nearestGridIndex;
@@ -308,8 +378,8 @@ namespace WorldBuilder {
                             for (auto neighborIt = this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors().begin(); neighborIt != this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors().end(); neighborIt++)
                             {
                                 uint32_t index = (*neighborIt)->get_index();
-                                testEdgeIt = testPlate->edgeCells.find(index);
-                                if (testEdgeIt != testPlate->edgeCells.end()) {
+                                testEdgeIt = testPlate->cells.find(index);
+                                if (testEdgeIt != testPlate->cells.end()) {
                                     std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
                                     uint64_t neighborKey;
                                     neighborKey = ((uint64_t)testPlate->id << 32) + index;
@@ -343,7 +413,13 @@ namespace WorldBuilder {
                 std::shared_ptr<PlateCell> cell = cellIt->second;
                 if (cell->displacement != nullptr && cell->displacement->deleteTarget != nullptr) {
                     cellsToDelete.push_back(cell);
-                    cell->displacement->deleteTarget->rock = accreteColumns(cell->displacement->deleteTarget->rock, cell->rock);
+                    // only move sediment if age is less than min
+                    if (cell->age < min_interaction_age) {
+                        cell->displacement->deleteTarget->rock.sediment = combineSegments(cell->displacement->deleteTarget->rock.sediment, cell->rock.sediment);
+                        cell->displacement->deleteTarget->rock.continental = combineSegments(cell->displacement->deleteTarget->rock.continental, cell->rock.continental);
+                    } else {
+                        cell->displacement->deleteTarget->rock = accreteColumns(cell->displacement->deleteTarget->rock, cell->rock);
+                    }
                 }
             }
             int deleteCount = 0;
@@ -356,28 +432,6 @@ namespace WorldBuilder {
             }
             //std::cout << "Deleted " << deleteCount << " cells for plate " << plateIt->second->id << "." << std::endl;
         }
-        
-// DEBUG RANDOM DELETE!
-//        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-//            std::shared_ptr<Plate> plate = plateIt->second;
-//            std::vector<std::shared_ptr<PlateCell>> cellsToDelete;
-//            for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
-//                std::shared_ptr<PlateCell> cell = cellIt->second;
-//                if (this->randomSource->randomUniform(0, 1000) == 0) {
-//                    cellsToDelete.push_back(cell);
-//                    //cell->displacement->deleteTarget->rock = accreteColumns(cell->displacement->deleteTarget->rock, cell->rock);
-//                }
-//            }
-//            int deleteCount = 0;
-//            for (auto deleteIt = cellsToDelete.begin(); deleteIt != cellsToDelete.end(); deleteIt++) {
-//                (*deleteIt)->displacement = nullptr;
-//                // skip erasing from edges, as that map gets cleared next
-//                plate->cells.erase((*deleteIt)->get_vertex()->get_index());
-//                
-//                deleteCount++;
-//            }
-//            std::cout << "Randomly deleted " << deleteCount << " cells for plate " << plateIt->second->id << "." << std::endl;
-//        }
         
         // clear displaced?
         for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
@@ -506,7 +560,7 @@ namespace WorldBuilder {
                     plateSizes.push_back(plateSize);
                 }
                 // get random index of plate to split
-                uint_fast32_t plateIndexToSplit = this->randomSource->randomUniform(0, totalPlateSize - 1);
+                uint32_t plateIndexToSplit = this->randomSource->randomUniform(0, totalPlateSize - 1);
                 std::shared_ptr<Plate> plateToSplit;
                 size_t currentTotalSize = 0;
                 size_t index = 0;
@@ -664,10 +718,11 @@ namespace WorldBuilder {
                 std::shared_ptr<PlateCell> cell = cellIt->second;
                 
                 // create sediement
-                float activeElevation = cell->get_elevation();
+                wb_float activeElevation = cell->get_elevation();
+                wb_float elevationAboveSealevel = activeElevation - 9260;
                 // move some stuff to lower elevation cells
-                float erosionFactor = (activeElevation - 9260) / (4000);
-                float erosionHeight = 0;
+                wb_float erosionFactor = elevationAboveSealevel / (4000);
+                wb_float erosionHeight = 0;
                 if (erosionFactor > 0) {
                     // add erosion to self as sediment
                     erosionFactor = erosionFactor*erosionFactor*erosionFactor/400;
@@ -699,7 +754,7 @@ namespace WorldBuilder {
                         std::shared_ptr<PlateCell> neighborCell = neighborIt->second;
                         wb_float neighborElevation = neighborCell->get_elevation();
                         if (activeElevation > neighborElevation) {
-                            erosionHeight = (activeElevation - neighborElevation) * erosionRate * timestep / neighborCount;
+                            erosionHeight = (activeElevation - neighborElevation) * erosionRate(elevationAboveSealevel) * timestep / neighborCount;
                             
                             // erode from this cell
                             RockSegment erodedSegment = cell->erodeThickness(erosionHeight);
@@ -720,7 +775,7 @@ namespace WorldBuilder {
                                 std::shared_ptr<PlateCell> neighborCell = neighborIt->second;
                                 wb_float neighborElevation = neighborCell->get_elevation();
                                 if (activeElevation > neighborElevation) {
-                                    erosionHeight = (activeElevation - neighborElevation) * erosionRate * timestep / neighborCount;
+                                    erosionHeight = (activeElevation - neighborElevation) * erosionRate(elevationAboveSealevel) * timestep / neighborCount;
                                     
                                     // erode from this cell
                                     RockSegment erodedSegment = cell->erodeThickness(erosionHeight);
@@ -744,13 +799,15 @@ namespace WorldBuilder {
         flowGraph->flowAll();
         wb_float afterTotal = flowGraph->totalMaterial();
         
-        std::cout << "After total is " << afterTotal / beforeTotal << " larger than before." << std::endl;
+        //std::cout << "Graph volume changed by " << std::scientific << afterTotal - beforeTotal << " and is " << afterTotal / beforeTotal << " of origional." << std::endl;
+        
+        //std::cout << "Orphaned material Out: " << std::scientific << flowGraph->inTransitOutMaterial() << " In: " << std::scientific << flowGraph->inTransitInMaterial() << std::endl;
         
         // update sediment for each plate cell
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate> plate = plateIt->second;
-            for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
-                std::shared_ptr<PlateCell> cell = cellIt->second;
+        for (auto&& plateIt : this->plates) {
+            std::shared_ptr<Plate>& plate = plateIt.second;
+            for (auto&& cellIt : plate->cells) {
+                std::shared_ptr<PlateCell>& cell = cellIt.second;
                 RockSegment sediment(cell->flowNode->get_materialHeight(), 2700);
                 cell->rock.sediment = sediment; // all sediment is tracked in the flow graph, not just what moved
             }
@@ -767,35 +824,38 @@ namespace WorldBuilder {
         std::shared_ptr<MaterialFlowGraph> graph = std::make_shared<MaterialFlowGraph>(cellCount);
         
         // set initial elevations
-        size_t index = 0;
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            for (auto cellIt = plateIt->second->cells.begin(); cellIt != plateIt->second->cells.end(); cellIt++, index++) {
-                std::shared_ptr<PlateCell>& cell = cellIt->second;
-                graph->nodes[index].set_materialHeight(cell->rock.sediment.get_thickness());
-                graph->nodes[index].offsetHeight = cell->get_elevation() - graph->nodes[index].get_materialHeight();
-                cell->flowNode = &graph->nodes[index];
+        size_t nodeIndex = 0;
+        for (auto&& plateIt : this->plates) {
+            for (auto&& cellIt : plateIt.second->cells) {
+                std::shared_ptr<PlateCell>& cell = cellIt.second;
+                graph->nodes[nodeIndex].set_materialHeight(cell->rock.sediment.get_thickness());
+                graph->nodes[nodeIndex].offsetHeight = cell->get_elevation() - graph->nodes[nodeIndex].get_materialHeight();
+                cell->flowNode = &graph->nodes[nodeIndex];
+                nodeIndex++;
             }
         }
+        
+        //std::cout << "Cell count: " << cellCount << " node Count: " << nodeIndex << std::endl;
         
         // build from node heights
         std::vector<std::pair<MaterialFlowNode*, wb_float>> outflowCandidates;
         // find outflow only, inflow set from outflow nodes
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate>& plate = plateIt->second;
-            for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
-                std::shared_ptr<PlateCell>& cell = cellIt->second;
+        for (auto&& plateIt : this->plates) {
+            std::shared_ptr<Plate>& plate = plateIt.second;
+            for (auto&& cellIt : plate->cells) {
+                std::shared_ptr<PlateCell>& cell = cellIt.second;
                 // we grab the elevations from the flow graph, incase a different module wants to modify the elevatsion while sediment transport is in progress
-                wb_float elevation = cell->flowNode->get_materialHeight() + cell->flowNode->offsetHeight;
+                wb_float elevation = cell->flowNode->elevation();
                 
                 // find outflow candidates
                 wb_float largestHeightDifference = 0; // determines suspended material
                 bool hasOutflow = false;
                 // candidates from within the plate
-                for (auto neighborIndexIt = cell->get_vertex()->get_neighbors().begin(); neighborIndexIt != cell->get_vertex()->get_neighbors().end(); neighborIndexIt++) {
-                    auto neighborIt = plate->cells.find((*neighborIndexIt)->get_index());
+                for (auto&& neighborIndexIt : cell->get_vertex()->get_neighbors()) {
+                    auto neighborIt = plate->cells.find(neighborIndexIt->get_index());
                     if (neighborIt != plate->cells.end()) {
                         std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
-                        wb_float heightDifference = elevation - (neighborCell->flowNode->get_materialHeight() + neighborCell->flowNode->offsetHeight);
+                        wb_float heightDifference = elevation - (neighborCell->flowNode->elevation());
                         if (heightDifference > 0) {
                             // downhill node found, take note
                             outflowCandidates.push_back(std::make_pair(neighborCell->flowNode, heightDifference));
@@ -815,7 +875,7 @@ namespace WorldBuilder {
                             auto neighborIt = neighborPlate->cells.find(neighborIndexIt->second.cellIndex);
                             if (neighborIt != neighborPlate->cells.end()) {
                                 std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
-                                wb_float heightDifference = elevation - (neighborCell->flowNode->get_materialHeight() + neighborCell->flowNode->offsetHeight);
+                                wb_float heightDifference = elevation - (neighborCell->flowNode->elevation());
                                 if (heightDifference > 0) {
                                     // downhill node found, take note
                                     outflowCandidates.push_back(std::make_pair(neighborCell->flowNode, heightDifference));
@@ -853,17 +913,19 @@ namespace WorldBuilder {
                             suspended = largestHeightDifference;
                         }
                         
-                        if (suspended >= cell->flowNode->get_materialHeight()) {
-                            cell->flowNode->suspendMaterial(graph->nodes[index].get_materialHeight());
-                        } else {
-                            cell->flowNode->suspendMaterial(suspended);
-                        }
+                        // will only suspend up to the available material
+                        cell->flowNode->suspendMaterial(suspended);
                         
                         //
-                        for (auto candidateIt = outflowCandidates.begin(); candidateIt != outflowCandidates.end(); candidateIt++) {
-                            wb_float heightDifference = candidateIt->second;
+                        for (auto&& candidateIt : outflowCandidates) {
+                            if (candidateIt.first == nullptr) {
+                                throw "Null destination";
+                            } else if(candidateIt.first == cell->flowNode) {
+                                throw "Source and cell are the same";
+                            }
+                            wb_float heightDifference = candidateIt.second;
                             std::shared_ptr<FlowEdge> edge = std::make_shared<FlowEdge>(FlowEdge{});
-                            edge->destination = candidateIt->first;
+                            edge->destination = candidateIt.first;
                             edge->source = cell->flowNode;
                             edge->materialHeight = 0; // none moved yet
                             edge->weight = heightDifference*heightDifference / totalSquareElevationOut; // squared weighting on height
@@ -896,17 +958,18 @@ namespace WorldBuilder {
                         
                         // hack lower
                         suspended = suspended*0.25;
-                        if (suspended >= cell->flowNode->get_materialHeight()) {
-                            cell->flowNode->suspendMaterial(graph->nodes[index].get_materialHeight());
-                        } else {
-                            cell->flowNode->suspendMaterial(suspended);
-                        }
+                        cell->flowNode->suspendMaterial(suspended);
                         
                         //
-                        for (auto candidateIt = outflowCandidates.begin(); candidateIt != outflowCandidates.end(); candidateIt++) {
-                            wb_float heightDifference = candidateIt->second;
+                        for (auto&& candidateIt : outflowCandidates) {
+                            if (candidateIt.first == nullptr) {
+                                throw "Null destination";
+                            } else if(candidateIt.first == cell->flowNode) {
+                                throw "Source and cell are the same";
+                            }
+                            wb_float heightDifference = candidateIt.second;
                             std::shared_ptr<FlowEdge> edge = std::make_shared<FlowEdge>(FlowEdge{});
-                            edge->destination = candidateIt->first;
+                            edge->destination = candidateIt.first;
                             edge->source = cell->flowNode;
                             edge->materialHeight = 0; // none moved yet
                             edge->weight = heightDifference / totalElevationOut; // linear weighting on height
@@ -918,54 +981,66 @@ namespace WorldBuilder {
                     }
                 }
                 outflowCandidates.clear();
-            }
-        }
+            } // end for each cell in plate
+        } // end for each plate
         return graph;
     }
     
 /****************************** Movement ******************************/
     
+    struct CellDeleteTarget {
+        std::shared_ptr<Plate> plate;
+        std::shared_ptr<PlateCell> cell;
+        
+        CellDeleteTarget(std::shared_ptr<Plate> initialPlate) : plate(initialPlate){};
+    };
+    
+#warning "Do it!"
+    // TODO make displacement always appear on an edge cell, so delete target is properly set
     void World::computeEdgeInteraction(wb_float timestep){
         // determine edge cell displacements, currently in the direction perpendicular to the closest triangle edge along the plate edge
         std::unordered_map<uint32_t, Matrix3x3> testPlateTransforms;
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate> plate = plateIt->second;
-            // WRONG AGAIN!, keep incase I'm wrong wrong
-            //Matrix3x3 toWorldTransform = math::transpose(plate->rotationMatrix);
+        for (auto&& plateIt : this->plates) {
+            std::shared_ptr<Plate> plate = plateIt.second;
             testPlateTransforms.clear();
-            for (auto edgeCellIt = plate->edgeCells.begin(); edgeCellIt != plate->edgeCells.end(); edgeCellIt++) {
-                std::shared_ptr<PlateCell> edgeCell = edgeCellIt->second;
-                std::pair<std::shared_ptr<PlateCell>, wb_float> deleteTarget = std::make_pair(nullptr, plate->densityOffset); // only plates less dense than this one
+            for (auto&& edgeCellIt : plate->edgeCells) {
+                std::shared_ptr<PlateCell> edgeCell = edgeCellIt.second;
+                CellDeleteTarget deleteTarget(plate); // only plates less dense than this one
                 
-                for (auto lastNearestIt = edgeCell->edgeInfo->otherPlateLastNearest.begin(); lastNearestIt != edgeCell->edgeInfo->otherPlateLastNearest.end(); lastNearestIt++) {
+                for (auto&& lastNearestIt : edgeCell->edgeInfo->otherPlateLastNearest) {
                     // check the plate exists
-                    auto testPlateIt = this->plates.find(lastNearestIt->first);
+                    auto testPlateIt = this->plates.find(lastNearestIt.first);
                     if (testPlateIt != this->plates.end()) {
                         std::shared_ptr<Plate> testPlate = testPlateIt->second;
                         // try to get matrix
                         Matrix3x3 toTestTransform;
-                        auto transformIt = testPlateTransforms.find(lastNearestIt->first);
+                        auto transformIt = testPlateTransforms.find(lastNearestIt.first);
                         if (transformIt != testPlateTransforms.end()) {
                             toTestTransform = transformIt->second;
                         } else {
                             // create the transform
                             toTestTransform = math::matrixMul(math::transpose(testPlate->rotationMatrix), plate->rotationMatrix);
-                            testPlateTransforms[lastNearestIt->first] = toTestTransform;
+                            testPlateTransforms[lastNearestIt.first] = toTestTransform;
                         }
                         Vec3 cellInTest = math::affineRotaionMulVec(toTestTransform, edgeCell->get_vertex()->get_vector());
                         // check nearest
-                        uint32_t nearestCellIndex = this->getNearestGridIndex(cellInTest, lastNearestIt->second);
+                        uint32_t nearestCellIndex = this->getNearestGridIndex(cellInTest, lastNearestIt.second);
                         
                         // test if nearest is in target plate
                         auto nearestCellIt = testPlate->cells.find(nearestCellIndex);
                         if (nearestCellIt != testPlate->cells.end()) {
                             std::shared_ptr<PlateCell> nearestCell = nearestCellIt->second;
+                            // check if this cell is too young
+#warning "Not stable checking, allows for rifting between colliding plates to advance the least dense plate"
+                            if (deleteTarget.cell == nullptr && edgeCell->age < min_interaction_age && nearestCell->age < min_interaction_age && testPlate->densityOffset < deleteTarget.plate->densityOffset) {
+                                deleteTarget.cell = nearestCell;
+                                deleteTarget.plate = testPlate;
+                            } else
                             // check delete target, any rock that ends up back at this cell should be moved to the nearest least dense plate
-                            if (testPlate->densityOffset < deleteTarget.second) {
-                                deleteTarget.first = nearestCell;
-                                deleteTarget.second = testPlate->densityOffset;
+                            if (testPlate->densityOffset < deleteTarget.plate->densityOffset && nearestCell->age > min_interaction_age) {
+                                deleteTarget.cell = nearestCell;
+                                deleteTarget.plate = testPlate;
                             }
-                            
                             const GridVertex* nearestVertex = nearestCell->get_vertex();
                             // need to find the two nearest neighbors
                             std::pair<const GridVertex*, wb_float> closestNeighbor = std::make_pair(nullptr, std::numeric_limits<wb_float>::infinity());
@@ -1064,6 +1139,9 @@ namespace WorldBuilder {
                                 }
                             }
                             if (netVCount != 0) {
+                                // add collision
+                                this->momentumTracker->addCollision(plate, testPlate);
+                                
                                 // store
                                 Vec3 displacementInSelf = math::affineRotaionMulVec(math::transpose(toTestTransform), displacement); // rotate back to self
                                 
@@ -1088,8 +1166,19 @@ namespace WorldBuilder {
                     //edgeCell->displacement->touched = true;
                     
                     // set delete target, will be nullptr if none found
-                    edgeCell->displacement->deleteTarget = deleteTarget.first;
+                    edgeCell->displacement->deleteTarget = deleteTarget.cell;
+                } else {
+                    edgeCell->displacement = std::make_shared<DisplacementInfo>();
+                    
+                    // set delete target, will be nullptr if none found
+                    edgeCell->displacement->deleteTarget = deleteTarget.cell;
                 }
+                
+                // add momentum tranfer for cells that will delete
+                if (deleteTarget.cell != nullptr) {
+                    this->momentumTracker->transferMomentumOfCell(plate, deleteTarget.plate, edgeCell);
+                }
+                
             } // end for each edge cell
         } // end for each plate
     }
@@ -1117,6 +1206,7 @@ namespace WorldBuilder {
                             if (neighborCell->displacement != nullptr) {
                                 Vec3 normalizedDisplacement = math::normalize3Vector(neighborCell->displacement->displacementLocation);
                                 wb_float angle = math::angleBetweenUnitVectors(math::normalize3Vector(cell->get_vertex()->get_vector() - neighborCell->get_vertex()->get_vector()), normalizedDisplacement);
+                                // Nan's will be skipped should they arise
                                 if (angle < math::piOverTwo) {
                                     wb_float weight = 0;
                                     //  could skip angle computation for this vertex, also normalized vectors could be precomputed for ~ 6*8*3*vertexCount bytes
@@ -1169,7 +1259,7 @@ namespace WorldBuilder {
 //            }
 //        }
         
-        std::cout << "Finished balacing plate " << plate->id << " in " << i << " steps."/* Average displacement of " << averageDisplacement / this->cellSmallAngle << "x smallest angle."*/ << std::endl;
+        //std::cout << "Finished balacing plate " << plate->id << " in " << i << " steps."/* Average displacement of " << averageDisplacement / this->cellSmallAngle << "x smallest angle."*/ << std::endl;
     }
     
     
@@ -1188,7 +1278,8 @@ namespace WorldBuilder {
     
 /****************************** Info Getters ******************************/
     
-    wb_float World::get_elevation(Vec3 location) {
+    LocationInfo World::get_locationInfo(Vec3 location) {
+        LocationInfo info;
         
         // TODO linear interpolation
         // simplest implementation, get the first closest cell we can find
@@ -1197,7 +1288,8 @@ namespace WorldBuilder {
             
             // check if we can interact
             Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), location);
-            if (plate->maxEdgeAngle == 0 || math::angleBetweenUnitVectors(locationInLocal, plate->center) < plate->maxEdgeAngle) {
+            wb_float testAngle = math::angleBetweenUnitVectors(locationInLocal, plate->center);
+            if (plate->maxEdgeAngle == 0 || testAngle < plate->maxEdgeAngle || std::isnan(testAngle)) {
                 uint32_t hint = 0;
                 if (plate->centerVertex != nullptr) {
                     hint = plate->centerVertex->get_index();
@@ -1205,12 +1297,38 @@ namespace WorldBuilder {
                 uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
                 auto nearestIt = plate->cells.find(nearestIndex);
                 if (nearestIt != plate->cells.end()) {
-                    return nearestIt->second->get_elevation();
+                    info.elevation = nearestIt->second->get_elevation();
+                    info.sediment = nearestIt->second->rock.sediment.get_thickness();
+                    info.plateId = plate->id;
+                    break;
                 }
             }
         }
         
-        return 0;
+        return info;
+    }
+    
+    RockColumn World::netRock() {
+        RockColumn result;
+        
+        for(auto&& plateIt : this->plates) {
+            for (auto&& cellIt : plateIt.second->cells) {
+                result = accreteColumns(result, cellIt.second->rock);
+            }
+        }
+        return result;
+    }
+    
+    /*************** Validation  ***************/
+    bool World::validate(){
+        for (auto&& plateIt : this->plates) {
+            for (auto&& cellIt : plateIt.second->cells) {
+                if (cellIt.first != cellIt.second->get_vertex()->get_index()) {
+                    throw std::logic_error("Incorrect Id for cell");
+                }
+            }
+        }
+        return true;
     }
     
     /*************** Casting ***************/
@@ -1218,11 +1336,11 @@ namespace WorldBuilder {
     uint32_t World::getNearestGridIndex(Vec3 location, uint32_t hint) {
         // check hint is valid
         if (hint >= this->worldGrid->verts_size()) {
-            return UINT32_MAX;
+            return std::numeric_limits<uint32_t>::max();
         }
         const GridVertex* currentNearest = &this->worldGrid->get_vertices()[hint];
         const GridVertex* testSetNearest = currentNearest;
-        float smallestSquareDistance = math::squareDistanceBetween3Points(location, currentNearest->get_vector());
+        wb_float smallestSquareDistance = math::squareDistanceBetween3Points(location, currentNearest->get_vector());
         // could loop for a very long time...
         do {
             float testDistance;
@@ -1275,9 +1393,15 @@ namespace WorldBuilder {
         this->desiredPlateCount = 10;
         
         // set cell small angle
-        // ~ distance on unit sphere
-        this->cellSmallAngle = 0.45 * math::distanceBetween3Points(this->worldGrid->get_vertices()[0].get_vector(), this->worldGrid->get_vertices()[0].get_neighbors()[0]->get_vector());
-        
+        this->cellSmallAngle = std::numeric_limits<wb_float>::max();
+        for (auto&& vertex : theWorldGrid->get_vertices()) {
+            for (auto&& testVertex : vertex.get_neighbors()) {
+                wb_float testAngle = math::distanceBetween3Points(vertex.get_vector(), testVertex->get_vector());
+                if (testAngle < cellSmallAngle) {
+                    this->cellSmallAngle = testAngle;
+                }
+            }
+        }
         // create and add plates
         std::shared_ptr<Plate> firstPlate = std::make_shared<Plate>(theWorldGrid->verts_size(), this->nextPlateId());
         firstPlate->pole = this->randomSource->getRandomPointUnitSphere();

@@ -26,7 +26,7 @@ namespace WorldBuilder {
         }
     }
     
-    Grid::Grid(size_t vertexCount) : verts(vertexCount) {
+    Grid::Grid(uint32_t vertexCount) : verts(vertexCount) {
         
     }
     
