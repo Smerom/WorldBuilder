@@ -77,13 +77,14 @@ void protobuf_AssignDesc_Basic_2eproto() {
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Grid, _internal_metadata_),
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Grid, _is_default_instance_));
   SimulationInfo_descriptor_ = file->message_type(2);
-  static const int SimulationInfo_offsets_[6] = {
+  static const int SimulationInfo_offsets_[7] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, elevations_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, displacements_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, sediment_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, plates_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, speeds_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, age_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, tempurature_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SimulationInfo, precipitation_),
   };
   SimulationInfo_reflection_ =
     ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
@@ -140,12 +141,13 @@ void protobuf_AddDesc_Basic_2eproto() {
     "x\030\001 \001(\r\022\016\n\006xCoord\030\002 \001(\002\022\016\n\006yCoord\030\003 \001(\002\022"
     "\016\n\006zCoord\030\004 \001(\002\022\021\n\tneighbors\030\005 \003(\r\"=\n\004Gr"
     "id\022\022\n\ntotalVerts\030\001 \001(\r\022!\n\010vertices\030\003 \003(\013"
-    "2\017.api.GridVertex\"z\n\016SimulationInfo\022\022\n\ne"
-    "levations\030\002 \003(\002\022\025\n\rdisplacements\030\003 \003(\r\022\020"
-    "\n\010sediment\030\004 \003(\002\022\016\n\006plates\030\005 \003(\005\022\016\n\006spee"
-    "ds\030\006 \003(\002\022\013\n\003age\030\007 \001(\0012E\n\014WorldBuilder\0225\n"
-    "\rGenerateWorld\022\t.api.Grid\032\023.api.Simulati"
-    "onInfo\"\000(\0010\001b\006proto3", 380);
+    "2\017.api.GridVertex\"\217\001\n\016SimulationInfo\022\022\n\n"
+    "elevations\030\002 \003(\002\022\020\n\010sediment\030\004 \003(\002\022\016\n\006pl"
+    "ates\030\005 \003(\005\022\016\n\006speeds\030\006 \003(\002\022\013\n\003age\030\007 \001(\001\022"
+    "\023\n\013tempurature\030\010 \003(\002\022\025\n\rprecipitation\030\t "
+    "\003(\0022E\n\014WorldBuilder\0225\n\rGenerateWorld\022\t.a"
+    "pi.Grid\032\023.api.SimulationInfo\"\000(\0010\001b\006prot"
+    "o3", 402);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "Basic.proto", &protobuf_RegisterTypes);
   GridVertex::default_instance_ = new GridVertex();
@@ -979,11 +981,12 @@ Grid::vertices() const {
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int SimulationInfo::kElevationsFieldNumber;
-const int SimulationInfo::kDisplacementsFieldNumber;
 const int SimulationInfo::kSedimentFieldNumber;
 const int SimulationInfo::kPlatesFieldNumber;
 const int SimulationInfo::kSpeedsFieldNumber;
 const int SimulationInfo::kAgeFieldNumber;
+const int SimulationInfo::kTempuratureFieldNumber;
+const int SimulationInfo::kPrecipitationFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 SimulationInfo::SimulationInfo()
@@ -1049,10 +1052,11 @@ void SimulationInfo::Clear() {
 // @@protoc_insertion_point(message_clear_start:api.SimulationInfo)
   age_ = 0;
   elevations_.Clear();
-  displacements_.Clear();
   sediment_.Clear();
   plates_.Clear();
   speeds_.Clear();
+  tempurature_.Clear();
+  precipitation_.Clear();
 }
 
 bool SimulationInfo::MergePartialFromCodedStream(
@@ -1075,24 +1079,6 @@ bool SimulationInfo::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
                  1, 18, input, this->mutable_elevations())));
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectTag(26)) goto parse_displacements;
-        break;
-      }
-
-      // repeated uint32 displacements = 3;
-      case 3: {
-        if (tag == 26) {
-         parse_displacements:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPackedPrimitive<
-                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
-                 input, this->mutable_displacements())));
-        } else if (tag == 24) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
-                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
-                 1, 26, input, this->mutable_displacements())));
         } else {
           goto handle_unusual;
         }
@@ -1165,6 +1151,42 @@ bool SimulationInfo::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
+        if (input->ExpectTag(66)) goto parse_tempurature;
+        break;
+      }
+
+      // repeated float tempurature = 8;
+      case 8: {
+        if (tag == 66) {
+         parse_tempurature:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPackedPrimitive<
+                   float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
+                 input, this->mutable_tempurature())));
+        } else if (tag == 69) {
+          DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
+                   float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
+                 1, 66, input, this->mutable_tempurature())));
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(74)) goto parse_precipitation;
+        break;
+      }
+
+      // repeated float precipitation = 9;
+      case 9: {
+        if (tag == 74) {
+         parse_precipitation:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPackedPrimitive<
+                   float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
+                 input, this->mutable_precipitation())));
+        } else if (tag == 77) {
+          DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
+                   float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
+                 1, 74, input, this->mutable_precipitation())));
+        } else {
+          goto handle_unusual;
+        }
         if (input->ExpectAtEnd()) goto success;
         break;
       }
@@ -1203,16 +1225,6 @@ void SimulationInfo::SerializeWithCachedSizes(
       this->elevations(i), output);
   }
 
-  // repeated uint32 displacements = 3;
-  if (this->displacements_size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteTag(3, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
-    output->WriteVarint32(_displacements_cached_byte_size_);
-  }
-  for (int i = 0; i < this->displacements_size(); i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt32NoTag(
-      this->displacements(i), output);
-  }
-
   // repeated float sediment = 4;
   if (this->sediment_size() > 0) {
     ::google::protobuf::internal::WireFormatLite::WriteTag(4, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
@@ -1248,6 +1260,26 @@ void SimulationInfo::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteDouble(7, this->age(), output);
   }
 
+  // repeated float tempurature = 8;
+  if (this->tempurature_size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteTag(8, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
+    output->WriteVarint32(_tempurature_cached_byte_size_);
+  }
+  for (int i = 0; i < this->tempurature_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteFloatNoTag(
+      this->tempurature(i), output);
+  }
+
+  // repeated float precipitation = 9;
+  if (this->precipitation_size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteTag(9, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
+    output->WriteVarint32(_precipitation_cached_byte_size_);
+  }
+  for (int i = 0; i < this->precipitation_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteFloatNoTag(
+      this->precipitation(i), output);
+  }
+
   // @@protoc_insertion_point(serialize_end:api.SimulationInfo)
 }
 
@@ -1266,20 +1298,6 @@ void SimulationInfo::SerializeWithCachedSizes(
   for (int i = 0; i < this->elevations_size(); i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteFloatNoTagToArray(this->elevations(i), target);
-  }
-
-  // repeated uint32 displacements = 3;
-  if (this->displacements_size() > 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
-      3,
-      ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
-      target);
-    target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
-      _displacements_cached_byte_size_, target);
-  }
-  for (int i = 0; i < this->displacements_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteUInt32NoTagToArray(this->displacements(i), target);
   }
 
   // repeated float sediment = 4;
@@ -1329,6 +1347,34 @@ void SimulationInfo::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(7, this->age(), target);
   }
 
+  // repeated float tempurature = 8;
+  if (this->tempurature_size() > 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
+      8,
+      ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
+      target);
+    target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
+      _tempurature_cached_byte_size_, target);
+  }
+  for (int i = 0; i < this->tempurature_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteFloatNoTagToArray(this->tempurature(i), target);
+  }
+
+  // repeated float precipitation = 9;
+  if (this->precipitation_size() > 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
+      9,
+      ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
+      target);
+    target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
+      _precipitation_cached_byte_size_, target);
+  }
+  for (int i = 0; i < this->precipitation_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteFloatNoTagToArray(this->precipitation(i), target);
+  }
+
   // @@protoc_insertion_point(serialize_to_array_end:api.SimulationInfo)
   return target;
 }
@@ -1352,23 +1398,6 @@ int SimulationInfo::ByteSize() const {
     }
     GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
     _elevations_cached_byte_size_ = data_size;
-    GOOGLE_SAFE_CONCURRENT_WRITES_END();
-    total_size += data_size;
-  }
-
-  // repeated uint32 displacements = 3;
-  {
-    int data_size = 0;
-    for (int i = 0; i < this->displacements_size(); i++) {
-      data_size += ::google::protobuf::internal::WireFormatLite::
-        UInt32Size(this->displacements(i));
-    }
-    if (data_size > 0) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::Int32Size(data_size);
-    }
-    GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-    _displacements_cached_byte_size_ = data_size;
     GOOGLE_SAFE_CONCURRENT_WRITES_END();
     total_size += data_size;
   }
@@ -1418,6 +1447,34 @@ int SimulationInfo::ByteSize() const {
     total_size += data_size;
   }
 
+  // repeated float tempurature = 8;
+  {
+    int data_size = 0;
+    data_size = 4 * this->tempurature_size();
+    if (data_size > 0) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(data_size);
+    }
+    GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+    _tempurature_cached_byte_size_ = data_size;
+    GOOGLE_SAFE_CONCURRENT_WRITES_END();
+    total_size += data_size;
+  }
+
+  // repeated float precipitation = 9;
+  {
+    int data_size = 0;
+    data_size = 4 * this->precipitation_size();
+    if (data_size > 0) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(data_size);
+    }
+    GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+    _precipitation_cached_byte_size_ = data_size;
+    GOOGLE_SAFE_CONCURRENT_WRITES_END();
+    total_size += data_size;
+  }
+
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = total_size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
@@ -1447,10 +1504,11 @@ void SimulationInfo::MergeFrom(const SimulationInfo& from) {
     ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
   }
   elevations_.MergeFrom(from.elevations_);
-  displacements_.MergeFrom(from.displacements_);
   sediment_.MergeFrom(from.sediment_);
   plates_.MergeFrom(from.plates_);
   speeds_.MergeFrom(from.speeds_);
+  tempurature_.MergeFrom(from.tempurature_);
+  precipitation_.MergeFrom(from.precipitation_);
   if (from.age() != 0) {
     set_age(from.age());
   }
@@ -1481,11 +1539,12 @@ void SimulationInfo::Swap(SimulationInfo* other) {
 }
 void SimulationInfo::InternalSwap(SimulationInfo* other) {
   elevations_.UnsafeArenaSwap(&other->elevations_);
-  displacements_.UnsafeArenaSwap(&other->displacements_);
   sediment_.UnsafeArenaSwap(&other->sediment_);
   plates_.UnsafeArenaSwap(&other->plates_);
   speeds_.UnsafeArenaSwap(&other->speeds_);
   std::swap(age_, other->age_);
+  tempurature_.UnsafeArenaSwap(&other->tempurature_);
+  precipitation_.UnsafeArenaSwap(&other->precipitation_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
 }
@@ -1529,36 +1588,6 @@ SimulationInfo::elevations() const {
 SimulationInfo::mutable_elevations() {
   // @@protoc_insertion_point(field_mutable_list:api.SimulationInfo.elevations)
   return &elevations_;
-}
-
-// repeated uint32 displacements = 3;
-int SimulationInfo::displacements_size() const {
-  return displacements_.size();
-}
-void SimulationInfo::clear_displacements() {
-  displacements_.Clear();
-}
- ::google::protobuf::uint32 SimulationInfo::displacements(int index) const {
-  // @@protoc_insertion_point(field_get:api.SimulationInfo.displacements)
-  return displacements_.Get(index);
-}
- void SimulationInfo::set_displacements(int index, ::google::protobuf::uint32 value) {
-  displacements_.Set(index, value);
-  // @@protoc_insertion_point(field_set:api.SimulationInfo.displacements)
-}
- void SimulationInfo::add_displacements(::google::protobuf::uint32 value) {
-  displacements_.Add(value);
-  // @@protoc_insertion_point(field_add:api.SimulationInfo.displacements)
-}
- const ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >&
-SimulationInfo::displacements() const {
-  // @@protoc_insertion_point(field_list:api.SimulationInfo.displacements)
-  return displacements_;
-}
- ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >*
-SimulationInfo::mutable_displacements() {
-  // @@protoc_insertion_point(field_mutable_list:api.SimulationInfo.displacements)
-  return &displacements_;
 }
 
 // repeated float sediment = 4;
@@ -1663,6 +1692,66 @@ void SimulationInfo::clear_age() {
   
   age_ = value;
   // @@protoc_insertion_point(field_set:api.SimulationInfo.age)
+}
+
+// repeated float tempurature = 8;
+int SimulationInfo::tempurature_size() const {
+  return tempurature_.size();
+}
+void SimulationInfo::clear_tempurature() {
+  tempurature_.Clear();
+}
+ float SimulationInfo::tempurature(int index) const {
+  // @@protoc_insertion_point(field_get:api.SimulationInfo.tempurature)
+  return tempurature_.Get(index);
+}
+ void SimulationInfo::set_tempurature(int index, float value) {
+  tempurature_.Set(index, value);
+  // @@protoc_insertion_point(field_set:api.SimulationInfo.tempurature)
+}
+ void SimulationInfo::add_tempurature(float value) {
+  tempurature_.Add(value);
+  // @@protoc_insertion_point(field_add:api.SimulationInfo.tempurature)
+}
+ const ::google::protobuf::RepeatedField< float >&
+SimulationInfo::tempurature() const {
+  // @@protoc_insertion_point(field_list:api.SimulationInfo.tempurature)
+  return tempurature_;
+}
+ ::google::protobuf::RepeatedField< float >*
+SimulationInfo::mutable_tempurature() {
+  // @@protoc_insertion_point(field_mutable_list:api.SimulationInfo.tempurature)
+  return &tempurature_;
+}
+
+// repeated float precipitation = 9;
+int SimulationInfo::precipitation_size() const {
+  return precipitation_.size();
+}
+void SimulationInfo::clear_precipitation() {
+  precipitation_.Clear();
+}
+ float SimulationInfo::precipitation(int index) const {
+  // @@protoc_insertion_point(field_get:api.SimulationInfo.precipitation)
+  return precipitation_.Get(index);
+}
+ void SimulationInfo::set_precipitation(int index, float value) {
+  precipitation_.Set(index, value);
+  // @@protoc_insertion_point(field_set:api.SimulationInfo.precipitation)
+}
+ void SimulationInfo::add_precipitation(float value) {
+  precipitation_.Add(value);
+  // @@protoc_insertion_point(field_add:api.SimulationInfo.precipitation)
+}
+ const ::google::protobuf::RepeatedField< float >&
+SimulationInfo::precipitation() const {
+  // @@protoc_insertion_point(field_list:api.SimulationInfo.precipitation)
+  return precipitation_;
+}
+ ::google::protobuf::RepeatedField< float >*
+SimulationInfo::mutable_precipitation() {
+  // @@protoc_insertion_point(field_mutable_list:api.SimulationInfo.precipitation)
+  return &precipitation_;
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS

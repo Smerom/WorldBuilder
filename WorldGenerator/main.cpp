@@ -66,15 +66,16 @@ public:
         grid->buildCenters();
         
         std::random_device rd;
-        //uint seed = 4254582156; // current test seed
+        //uint seed = 2202871464; // current test seed
         uint seed = rd(); // get a random seed
         std::printf("Random Seed: %u\n", seed);
         // create the generator
         std::shared_ptr<WorldBuilder::Random> randomSource(new WorldBuilder::Random(seed));
         WorldBuilder::SimulationRunner runner(new WorldBuilder::BombardmentGenerator(randomSource), new WorldBuilder::World(grid, randomSource));
-        runner.set_runTimesteps(3);
+        runner.set_runTimesteps(5);
         runner.set_runMinTimestep(0.05);
         runner.shouldLogRunTiming = true;
+        runner.shouldLogRockDelta = false;
         
         bool open = true;
         while (open) {
@@ -135,6 +136,8 @@ public:
                     info.add_elevations(infoIt->elevation);
                     info.add_sediment(infoIt->sediment);
                     info.add_plates(infoIt->plateId);
+                    info.add_tempurature(infoIt->tempurature);
+                    info.add_precipitation(infoIt->precipitation);
                 }
             }
             

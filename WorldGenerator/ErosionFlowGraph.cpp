@@ -7,8 +7,14 @@
 #include "ErosionFlowGraph.hpp"
 
 #include <iostream>
+#include <unordered_set>
 
 namespace WorldBuilder {
+    
+    bool compareElevations(const MaterialFlowNode& left, const MaterialFlowNode& right){
+        return left.elevation() < right.elevation();
+    }
+    
     void MaterialFlowNode::upTreeFlow(){
         if (this->touched == false) {
             // touch self
@@ -48,9 +54,61 @@ namespace WorldBuilder {
                 totalMaterialMoved += flowEdge->weight * suspendedMaterial*0.99;
             }
             
-            if (totalMaterialMoved - suspendedMaterial > float_epsilon) {
-                throw "High percentage of extra material moved!";
-            }
+            
+            
+//            // if we didn't move any material, need to smooth with inflow neighbors
+//            // taken from thermal smothing, with very high erosion rate (0.9)
+//            // could cause negative desired material height if neighbors are somehow now lower in elevation than this one
+//            if (totalMaterialMoved == 0) {
+//                // gather all within two
+//                std::unordered_set<MaterialFlowNode*> targets;
+//                targets.insert(this);
+//                
+//                for(auto&& flowEdge : this->inflowTargets) {
+//                    auto testNode = targets.find(flowEdge->source);
+//                    if (testNode == targets.end()) {
+//                        targets.insert(flowEdge->source);
+//                    }
+//                    for(auto&& secondIn : flowEdge->source->inflowTargets) {
+//                        auto testInNode = targets.find(secondIn->source);
+//                        if (testInNode == targets.end()) {
+//                            targets.insert(flowEdge->source);
+//                        }
+//                    }
+//                    for(auto&& secondOut : flowEdge->source->outflowTargets) {
+//                        auto testOutNode = targets.find(secondOut->source);
+//                        if (testOutNode == targets.end()) {
+//                            targets.insert(flowEdge->source);
+//                        }
+//                    }
+//                }
+//                
+//                
+//                wb_float distributionCount = targets.size();
+//                wb_float effectiveElevation = this->elevation() + suspendedMaterial;
+//                for(auto&& node : targets) {
+//                    if (node != this) {
+//                        wb_float movedMaterial = (effectiveElevation - node->elevation()) * 0.98 / distributionCount;
+//                        if (movedMaterial > 0) {
+//                            node->set_materialHeight(node->get_materialHeight() + movedMaterial);
+//                            totalMaterialMoved += movedMaterial;
+//                        }
+//                    }
+//                }
+//
+//
+//                wb_float upslopeCount = this->inflowTargets.size();
+//                wb_float effectiveElevation = this->elevation() + suspendedMaterial;
+//                for (auto&& flowEdge : this->inflowTargets)
+//                {
+//                    wb_float movedMaterial = (effectiveElevation - flowEdge->source->elevation()) * 0.9 / upslopeCount;
+//                    if (movedMaterial > 0) {
+//                        flowEdge->source->set_materialHeight(flowEdge->source->get_materialHeight() + movedMaterial);
+//                        totalMaterialMoved += movedMaterial;
+//                    }
+//                }
+//            }
+            
             
             // remove material, suspended from this cell plus any discrepancy between suspended and total moved, if possible
             wb_float desiredMaterialHeight = this->materialHeight + (suspendedMaterial - totalMaterialMoved);
@@ -74,10 +132,142 @@ namespace WorldBuilder {
         }
         if (std::abs(total - 1) > float_epsilon) {
             std::cout << "Total weight is: " << total << std::endl;
-            throw "eeerorrr";
+            throw std::logic_error("eeerorrr");
         }
         return true;
     }
+    
+    MaterialFlowBasin* MaterialFlowNode::downhillBasin() const {
+        if (this->basin != nullptr) {
+            return this->basin;
+        }
+        
+        wb_float lowestElevation = std::numeric_limits<wb_float>::max();
+        MaterialFlowNode* lowestTarget = nullptr;
+        
+        for (auto&& downhillTestTarget : this->outflowTargets) {
+            if (downhillTestTarget->destination->elevation() < lowestElevation) {
+                lowestElevation = downhillTestTarget->destination->elevation();
+                lowestTarget = downhillTestTarget->destination;
+            }
+        }
+        
+        if (lowestTarget == nullptr) {
+            throw std::logic_error("Basin not constructed");
+        } else {
+            return lowestTarget->downhillBasin();
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    BasinFillingResult MaterialFlowBasin::fillNext(){
+        BasinFillingResult result;
+        result.result = Continue;
+        result.collisionBasin = nullptr;
+        result.overflowStart = nullptr;;
+        result.overflowThickness = 0;
+        
+        // return filled if no more thickness remaining
+        if (this->remainingThickness <= 0 || this->upslopeCandidates.size() == 0) {
+            result.result = Filled;
+            return result;
+        }
+        
+        // get lowest upslope
+        MaterialFlowNode* nextNode = *this->upslopeCandidates.begin();
+        wb_float volumeToSelf = (nextNode->elevation() - this->currentElevation) * this->nodes.size();
+        
+        // modify current thickness
+        if (volumeToSelf > this->remainingThickness) {
+            result.result = Filled;
+            wb_float addedElevation = this->remainingThickness / this->nodes.size();
+            this->remainingThickness = 0;
+            this->currentElevation += addedElevation;
+            
+        } else {
+            if (volumeToSelf < 0) {
+                this->remainingThickness = this->remainingThickness - (this->currentElevation - nextNode->elevation());
+                // elevation remains unchanged
+            } else {
+                this->remainingThickness = this->remainingThickness - volumeToSelf;
+                this->currentElevation = nextNode->elevation();
+            }
+            
+            if (nextNode->get_basin() != nullptr) {
+                result.result = Collision;
+                result.collisionBasin = nextNode->get_basin();
+                if (result.collisionBasin == this) {
+                    throw std::logic_error("bad");
+                }
+            } else {
+                nextNode->set_basin(this);
+                this->addNode(nextNode);
+            }
+        }
+        
+        // check overflow
+        if (result.result == Continue) {
+            // add all our uphill neighbors
+            for (auto&& edge : nextNode->inflowTargets) {
+                this->addUpslope(edge->source);
+            }
+            // test all downhill neighbors
+            wb_float outElevation = nextNode->elevation();
+            bool overflowFound = false;
+            MaterialFlowNode* overflowTarget = nullptr;
+            for (auto&& edge : nextNode->outflowTargets) {
+                if (this->nodes.find(edge->destination) == this->nodes.end()) {
+                    if (edge->destination->elevation() < outElevation) {
+                        outElevation = edge->destination->elevation();
+                        overflowFound = true;
+                        overflowTarget = edge->destination;
+                    }
+                }
+            }
+            if (overflowFound) {
+                result.overflowThickness = this->remainingThickness;
+                this->remainingThickness = 0;
+                result.result = Overflow;
+                result.overflowStart = overflowTarget;
+            }
+        }
+        
+        return result;
+    }
+    
+    void MaterialFlowBasin::merge(WorldBuilder::MaterialFlowBasin* absorbedBasin){
+        
+        if (this == absorbedBasin) {
+            throw std::logic_error("Can't merge with self");
+        }
+        
+        // merge nodes into this
+        for (auto&& node : absorbedBasin->nodes) {
+            this->addNode(node);
+            node->set_basin(this);
+        }
+        absorbedBasin->nodes.clear();
+        
+        // merge candidates into this, but only if not in upslope candidates
+        for (auto&& node : absorbedBasin->upslopeCandidates) {
+            this->addUpslope(node);
+        }
+        absorbedBasin->upslopeCandidates.clear();
+        
+        // merge thicknesses
+        this->remainingThickness += absorbedBasin->remainingThickness;
+        absorbedBasin->remainingThickness = 0;
+    }
+    
+    
+    
+    
+    
     
     bool MaterialFlowGraph::checkWeights() const {
         for (size_t index = 0; index < this->nodeCount; index++) {
@@ -128,5 +318,92 @@ namespace WorldBuilder {
                 this->nodes[nodeIndex].upTreeFlow();
             }
         }
-    }// MaterialFlowGraph::flowAll()
+    } // MaterialFlowGraph::flowAll()
+    
+    void MaterialFlowGraph::fillBasins(){
+        
+        // create basins
+        for (auto&& node : this->nodes) {
+            if (node.outflowTargets.size() == 0) {
+                // create a basin with this node
+                
+                MaterialFlowBasin* basin = new MaterialFlowBasin(node.elevation() - node.get_materialHeight(), node.get_materialHeight(), &node);
+                this->activeBasins.push(basin);
+                
+                // all material is moved to the basin
+                node.set_materialHeight(0);
+            }
+        }
+        
+        // while we have basins left to calculate
+        while (this->activeBasins.size() > 0) {
+            // get the top one
+            MaterialFlowBasin* lowestBasin = this->activeBasins.top();
+            this->activeBasins.pop();
+            
+            wb_float nextElevation;
+            if (this->activeBasins.size() > 0) {
+                nextElevation = this->activeBasins.top()->elevation();
+            } else {
+                nextElevation = std::numeric_limits<wb_float>::max();
+            }
+            
+            bool done = false;
+            bool completed = false;
+            while (!done) {
+                BasinFillingResult fillResult = lowestBasin->fillNext();
+                switch (fillResult.result) {
+                    case Continue:
+                        if (lowestBasin->elevation() > nextElevation) {
+                            done = true;
+                        }
+                        break;
+                    case Filled:
+                        done = true;
+                        completed = true;
+                        break;
+                    case Overflow: {
+                        // find the next basin, remove from inactive, add to active
+                        MaterialFlowBasin* targetBasin = fillResult.overflowStart->downhillBasin();
+                        
+                        // move from inactive to active, and add the overflow thickness
+                        targetBasin->addThickness(fillResult.overflowThickness);
+                        this->activeBasins.push(targetBasin);
+                        this->inactiveBasins.erase(targetBasin);
+                        
+                        done = true;
+                        completed = true;
+                        break;
+                    }
+                    case Collision:
+                        // merge
+                        lowestBasin->merge(fillResult.collisionBasin);
+                        
+                        // check elevation
+                        if (lowestBasin->elevation() > nextElevation) {
+                            done = true;
+                        }
+                        break;
+                }
+            }
+            
+            if (!completed) {
+                this->activeBasins.push(lowestBasin);
+            } else {
+                this->inactiveBasins.insert(lowestBasin);
+            }
+        }
+        
+        // set material for all basin nodes
+        for(auto&& node : this->nodes) {
+            if (node.get_basin() != nullptr) {
+                if (node.elevation() <= node.get_basin()->elevation()) {
+                    node.set_materialHeight(node.get_materialHeight() + node.get_basin()->elevation() - node.elevation());
+                } else {
+                    //throw std::logic_error("node above basin height");
+                }
+            }
+        }
+        
+    } // MaterialFlowGraph::fillBasins()
 }

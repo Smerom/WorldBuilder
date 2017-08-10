@@ -16,7 +16,7 @@ namespace WorldBuilder {
     void BombardmentGenerator::Generate(std::shared_ptr<World> theWorld){
         
         
-        wb_float prehistoricRootThickness = 120000 + 100000; // some continental, plus root to melt
+        wb_float prehistoricRootThickness = 125000 + 100000; // some continental, plus root to melt
         
         // create a nice smooth world
         auto plateIt = theWorld->get_plates().find(0);
@@ -98,10 +98,10 @@ namespace WorldBuilder {
                     }
                 }
                 // place material (1/4 as much per tile as removed?)
-                RockSegment continentalConversion((materialEjected.root.get_thickness() / 2) * materialEjected.root.get_density() / 2700, 2700);
+                RockSegment continentalConversion((materialEjected.root.get_thickness() * 2/3) * materialEjected.root.get_density() / 2700, 2700);
                 
                 materialEjected.continental = combineSegments(materialEjected.continental, continentalConversion);
-                materialEjected.root.set_thickness((materialEjected.root.get_thickness() / 2));
+                materialEjected.root.set_thickness((materialEjected.root.get_thickness() / 3));
                 
                 float totalPercent = 0;
                 
@@ -111,7 +111,7 @@ namespace WorldBuilder {
                     // at a rotation about the y axis
                     //const float ejectaFactor = 1 / 0.50270049114536518;
                     wb_float distance = math::distanceBetween3Points(randomPoint, cell->get_vertex()->get_vector());
-                    distance = distance * theWorld->get_attributes().radius * 1000; //to meters
+                    distance = distance * theWorld->get_attributes().radius * 1000; // to meters
                     
                     // exponential, starts with cliff edge however
                     wb_float norm = (std::exp(-1*((distance - craterRadius)*(distance - craterRadius)/(2*craterRadius*craterRadius/9))));

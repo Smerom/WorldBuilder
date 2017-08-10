@@ -15,11 +15,11 @@ namespace WorldBuilder {
     // per million years
     wb_float erosionRate(wb_float elevationAboveSealevel) {
         if (elevationAboveSealevel < 1000) {
-            return 0.05;
+            return 0.075;
         } else if (elevationAboveSealevel < 4000) {
-            return 0.10;
+            return 0.15;
         } else {
-            return 0.20;
+            return 0.30;
         }
     }
     
@@ -165,6 +165,10 @@ namespace WorldBuilder {
         
         // float it!
         this->homeostasis(timestep);
+        
+        // update attributes for cells
+        this->updatePrecipitation();
+        this->updateTempurature();
     }
     
     void World::columnModificationPhase(wb_float timestep){
@@ -539,9 +543,49 @@ namespace WorldBuilder {
         }
     }
     
+    void World::updateTempurature() {
+        Vec3 northPole;
+        northPole.coords[2] = 1;
+        
+        // loop through all plate cells
+        for (auto&& plateIt : this->plates) {
+            auto plate = plateIt.second;
+            for (auto&& cellIt : plate->cells) {
+                auto cell = cellIt.second;
+                wb_float latitude = std::abs(math::piOverTwo - math::angleBetweenUnitVectors(plate->localToWorld(cell->get_vertex()->get_vector()), northPole));
+                wb_float elevation = cell->get_elevation() - this->attributes.sealevel;
+                if (elevation < 0) {
+                    elevation = 0;
+                }
+                // 25*(cos(2*latitude) + 0.4)
+                // lapse rate estimate of 5C/1000 meters above sealevel
+                cell->tempurature = 25*(std::cos(2*latitude) + 0.4) - 5 * elevation / 1000;
+            }
+        }
+        
+    } // World::updateTempurature
+    
+    void World::updatePrecipitation() {
+        Vec3 northPole;
+        northPole.coords[2] = 1;
+        
+        // loop through all plate cells
+        for (auto&& plateIt : this->plates) {
+            auto plate = plateIt.second;
+            for (auto&& cellIt : plate->cells) {
+                auto cell = cellIt.second;
+                wb_float latitude = std::abs(math::piOverTwo - math::angleBetweenUnitVectors(plate->localToWorld(cell->get_vertex()->get_vector()), northPole));
+                // e^(-(x)^2/(2 *0.6^2))/(sqrt(2*π) * 0.6) + 1/20*e^(-(x - 5/9*pi/2)^2/(2 * 0.1^2))/(sqrt(2*π) * 0.1)
+                // simplifies to 0.199471 e^(-50. (0.872665 - x)^2) + 0.664904 e^(-1.38889 x^2)
+                cell->precipitation = 6.5*(0.199471 * std::exp(-50.0 * (0.872665 - latitude) * (0.872665 - latitude)) + 0.664904 * std::exp(-1.38889 * latitude * latitude));
+            }
+        }
+    } // World::updatePrecipitation
+    
+    
     /*************** Supercontinent Cycle ***************/
     void World::supercontinentCycle(){
-        // for cycle if plates have eaten eachother (want more than two)
+        // for cycle if plates have eaten each other (want more than two)
         if (this->age > this->supercontinentCycleDuration + this->supercontinentCycleStartAge || this->plates.size() <= 2) {
             this->supercontinentCycleStartAge = this->age;
             this->supercontinentCycleDuration = this->randomSource->randomNormal(300, 200);
@@ -797,6 +841,7 @@ namespace WorldBuilder {
         wb_float beforeTotal = flowGraph->totalMaterial();
         bool validWeights = flowGraph->checkWeights();
         flowGraph->flowAll();
+        flowGraph->fillBasins();
         wb_float afterTotal = flowGraph->totalMaterial();
         
         //std::cout << "Graph volume changed by " << std::scientific << afterTotal - beforeTotal << " and is " << afterTotal / beforeTotal << " of origional." << std::endl;
@@ -1299,6 +1344,8 @@ namespace WorldBuilder {
                 if (nearestIt != plate->cells.end()) {
                     info.elevation = nearestIt->second->get_elevation();
                     info.sediment = nearestIt->second->rock.sediment.get_thickness();
+                    info.tempurature = nearestIt->second->tempurature;
+                    info.precipitation = nearestIt->second->precipitation;
                     info.plateId = plate->id;
                     break;
                 }

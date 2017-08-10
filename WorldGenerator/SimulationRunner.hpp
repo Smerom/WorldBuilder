@@ -31,10 +31,11 @@ namespace WorldBuilder {
     public:
         
         bool shouldLogRunTiming;
+        bool shouldLogRockDelta;
 
         // requires World and Generator at construction
         // takes ownership of both
-        SimulationRunner(Generator *generator, World* world) : theWorld(world), theGenerator(generator), haveGenerated(false), shouldLogRunTiming(true){};
+        SimulationRunner(Generator *generator, World* world) : theWorld(world), theGenerator(generator), haveGenerated(false), shouldLogRunTiming(true), shouldLogRockDelta(true){};
         
         void Run();
         

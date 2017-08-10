@@ -11,6 +11,7 @@
 
 namespace WorldBuilder {
     
+    // define custom float type for easy presision switching
     typedef double wb_float;
     
     static const wb_float float_epsilon = 0.00001;

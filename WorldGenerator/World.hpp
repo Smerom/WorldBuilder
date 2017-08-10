@@ -21,9 +21,11 @@ namespace WorldBuilder {
     struct LocationInfo {
         wb_float elevation;
         wb_float sediment;
+        wb_float tempurature;
+        wb_float precipitation;
         uint32_t plateId;
         
-        LocationInfo() : elevation(0), sediment(0), plateId(std::numeric_limits<uint32_t>::max()){};
+        LocationInfo() : elevation(0), sediment(0), tempurature(0), precipitation(0), plateId(std::numeric_limits<uint32_t>::max()){};
     };
     /*************** Base World ***************/
     /*  Responsible for running the world forward through time
@@ -97,6 +99,8 @@ namespace WorldBuilder {
         std::vector<std::shared_ptr<PlateCell>> riftPlate(std::shared_ptr<Plate> plate);
         
         void homeostasis(wb_float timestep);
+        void updateTempurature();
+        void updatePrecipitation();
         void supercontinentCycle();
         
         /*************** Transistion Aux ***************/

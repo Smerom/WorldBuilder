@@ -37,8 +37,10 @@ namespace WorldBuilder {
         for (uint_fast32_t i = 0; i < stepCount; i++) {
             tasks.push_back(this->theWorld->progressByTimestep(minTimestep));
             RockColumn newNet = this->theWorld->netRock();
-            std::cout << "Rock change after full round:" << std::endl;
-            logColumnChange(this->initialRock, newNet, true, false);
+            if (this->shouldLogRockDelta == true) {
+                std::cout << "Rock change after full round:" << std::endl;
+                logColumnChange(this->initialRock, newNet, true, false);
+            }
         }
         if (this->shouldLogRunTiming == true) {
             std::cout.precision(5);

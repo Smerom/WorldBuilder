@@ -70,6 +70,8 @@ namespace WorldBuilder {
         MaterialFlowNode* flowNode;
         
         wb_float age;
+        wb_float tempurature;
+        wb_float precipitation;
         
         
         PlateCell(const GridVertex* vertex);

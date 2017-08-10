@@ -326,18 +326,6 @@ class SimulationInfo : public ::google::protobuf::Message /* @@protoc_insertion_
   ::google::protobuf::RepeatedField< float >*
       mutable_elevations();
 
-  // repeated uint32 displacements = 3;
-  int displacements_size() const;
-  void clear_displacements();
-  static const int kDisplacementsFieldNumber = 3;
-  ::google::protobuf::uint32 displacements(int index) const;
-  void set_displacements(int index, ::google::protobuf::uint32 value);
-  void add_displacements(::google::protobuf::uint32 value);
-  const ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >&
-      displacements() const;
-  ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >*
-      mutable_displacements();
-
   // repeated float sediment = 4;
   int sediment_size() const;
   void clear_sediment();
@@ -380,6 +368,30 @@ class SimulationInfo : public ::google::protobuf::Message /* @@protoc_insertion_
   double age() const;
   void set_age(double value);
 
+  // repeated float tempurature = 8;
+  int tempurature_size() const;
+  void clear_tempurature();
+  static const int kTempuratureFieldNumber = 8;
+  float tempurature(int index) const;
+  void set_tempurature(int index, float value);
+  void add_tempurature(float value);
+  const ::google::protobuf::RepeatedField< float >&
+      tempurature() const;
+  ::google::protobuf::RepeatedField< float >*
+      mutable_tempurature();
+
+  // repeated float precipitation = 9;
+  int precipitation_size() const;
+  void clear_precipitation();
+  static const int kPrecipitationFieldNumber = 9;
+  float precipitation(int index) const;
+  void set_precipitation(int index, float value);
+  void add_precipitation(float value);
+  const ::google::protobuf::RepeatedField< float >&
+      precipitation() const;
+  ::google::protobuf::RepeatedField< float >*
+      mutable_precipitation();
+
   // @@protoc_insertion_point(class_scope:api.SimulationInfo)
  private:
 
@@ -387,8 +399,6 @@ class SimulationInfo : public ::google::protobuf::Message /* @@protoc_insertion_
   bool _is_default_instance_;
   ::google::protobuf::RepeatedField< float > elevations_;
   mutable int _elevations_cached_byte_size_;
-  ::google::protobuf::RepeatedField< ::google::protobuf::uint32 > displacements_;
-  mutable int _displacements_cached_byte_size_;
   ::google::protobuf::RepeatedField< float > sediment_;
   mutable int _sediment_cached_byte_size_;
   ::google::protobuf::RepeatedField< ::google::protobuf::int32 > plates_;
@@ -396,6 +406,10 @@ class SimulationInfo : public ::google::protobuf::Message /* @@protoc_insertion_
   ::google::protobuf::RepeatedField< float > speeds_;
   mutable int _speeds_cached_byte_size_;
   double age_;
+  ::google::protobuf::RepeatedField< float > tempurature_;
+  mutable int _tempurature_cached_byte_size_;
+  ::google::protobuf::RepeatedField< float > precipitation_;
+  mutable int _precipitation_cached_byte_size_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_Basic_2eproto();
   friend void protobuf_AssignDesc_Basic_2eproto();
@@ -580,36 +594,6 @@ SimulationInfo::mutable_elevations() {
   return &elevations_;
 }
 
-// repeated uint32 displacements = 3;
-inline int SimulationInfo::displacements_size() const {
-  return displacements_.size();
-}
-inline void SimulationInfo::clear_displacements() {
-  displacements_.Clear();
-}
-inline ::google::protobuf::uint32 SimulationInfo::displacements(int index) const {
-  // @@protoc_insertion_point(field_get:api.SimulationInfo.displacements)
-  return displacements_.Get(index);
-}
-inline void SimulationInfo::set_displacements(int index, ::google::protobuf::uint32 value) {
-  displacements_.Set(index, value);
-  // @@protoc_insertion_point(field_set:api.SimulationInfo.displacements)
-}
-inline void SimulationInfo::add_displacements(::google::protobuf::uint32 value) {
-  displacements_.Add(value);
-  // @@protoc_insertion_point(field_add:api.SimulationInfo.displacements)
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >&
-SimulationInfo::displacements() const {
-  // @@protoc_insertion_point(field_list:api.SimulationInfo.displacements)
-  return displacements_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >*
-SimulationInfo::mutable_displacements() {
-  // @@protoc_insertion_point(field_mutable_list:api.SimulationInfo.displacements)
-  return &displacements_;
-}
-
 // repeated float sediment = 4;
 inline int SimulationInfo::sediment_size() const {
   return sediment_.size();
@@ -712,6 +696,66 @@ inline void SimulationInfo::set_age(double value) {
   
   age_ = value;
   // @@protoc_insertion_point(field_set:api.SimulationInfo.age)
+}
+
+// repeated float tempurature = 8;
+inline int SimulationInfo::tempurature_size() const {
+  return tempurature_.size();
+}
+inline void SimulationInfo::clear_tempurature() {
+  tempurature_.Clear();
+}
+inline float SimulationInfo::tempurature(int index) const {
+  // @@protoc_insertion_point(field_get:api.SimulationInfo.tempurature)
+  return tempurature_.Get(index);
+}
+inline void SimulationInfo::set_tempurature(int index, float value) {
+  tempurature_.Set(index, value);
+  // @@protoc_insertion_point(field_set:api.SimulationInfo.tempurature)
+}
+inline void SimulationInfo::add_tempurature(float value) {
+  tempurature_.Add(value);
+  // @@protoc_insertion_point(field_add:api.SimulationInfo.tempurature)
+}
+inline const ::google::protobuf::RepeatedField< float >&
+SimulationInfo::tempurature() const {
+  // @@protoc_insertion_point(field_list:api.SimulationInfo.tempurature)
+  return tempurature_;
+}
+inline ::google::protobuf::RepeatedField< float >*
+SimulationInfo::mutable_tempurature() {
+  // @@protoc_insertion_point(field_mutable_list:api.SimulationInfo.tempurature)
+  return &tempurature_;
+}
+
+// repeated float precipitation = 9;
+inline int SimulationInfo::precipitation_size() const {
+  return precipitation_.size();
+}
+inline void SimulationInfo::clear_precipitation() {
+  precipitation_.Clear();
+}
+inline float SimulationInfo::precipitation(int index) const {
+  // @@protoc_insertion_point(field_get:api.SimulationInfo.precipitation)
+  return precipitation_.Get(index);
+}
+inline void SimulationInfo::set_precipitation(int index, float value) {
+  precipitation_.Set(index, value);
+  // @@protoc_insertion_point(field_set:api.SimulationInfo.precipitation)
+}
+inline void SimulationInfo::add_precipitation(float value) {
+  precipitation_.Add(value);
+  // @@protoc_insertion_point(field_add:api.SimulationInfo.precipitation)
+}
+inline const ::google::protobuf::RepeatedField< float >&
+SimulationInfo::precipitation() const {
+  // @@protoc_insertion_point(field_list:api.SimulationInfo.precipitation)
+  return precipitation_;
+}
+inline ::google::protobuf::RepeatedField< float >*
+SimulationInfo::mutable_precipitation() {
+  // @@protoc_insertion_point(field_mutable_list:api.SimulationInfo.precipitation)
+  return &precipitation_;
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS

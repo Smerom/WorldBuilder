@@ -20,11 +20,12 @@ message Grid {
 
 message SimulationInfo {
     repeated float elevations = 2;
-    repeated uint32 displacements = 3;
     repeated float sediment = 4;
     repeated int32 plates = 5;
     repeated float speeds = 6; // plate speeds
     double age = 7;
+    repeated float tempurature = 8;
+    repeated float precipitation = 9;
 }
 
 service WorldBuilder {
