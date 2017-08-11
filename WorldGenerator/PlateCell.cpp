@@ -12,16 +12,17 @@ namespace WorldBuilder {
         return this->baseOffset + this->rock.thickness();
     }
     
+    // Removes thickness and combines into a single rock segement representing the resulting sediment
     RockSegment PlateCell::erodeThickness(wb_float thickness){
         RockColumn erodedRock = this->rock.removeThickness(thickness);
         return combineSegments(erodedRock.sediment, combineSegments(erodedRock.continental, combineSegments(erodedRock.oceanic, erodedRock.root)));
     }
     
     void PlateCell::homeostasis(const WorldAttributes worldAttributes, wb_float timestep){
-        this->age += timestep;
+        this->age += timestep; // certain effects depend on cell age
         
         // crush any continental or oceanic crust above max thickness
-        // KILLS ALL THE CONTINENT GROWTH!
+// KILLS ALL THE CONTINENT GROWTH!
 //        if (this->rock.continental.get_thickness() > 70000) {
 //            wb_float thicknessToHarden = this->rock.continental.get_thickness() - 65000; // buffer so we don't compute every step
 //            this->rock.continental.set_thickness(65000);
@@ -36,6 +37,7 @@ namespace WorldBuilder {
             wb_float thicknessInRoot = thicknessToHarden * this->rock.oceanic.get_density() / this->rock.root.get_density();
             this->rock.root.set_thickness(this->rock.root.get_thickness() + thicknessInRoot);
         } else if (this->rock.continental.get_thickness() > 10000) {
+            // WHAT'S THIS FOR?
             // harden all oceanic to root
             wb_float thicknessToHarden = this->rock.oceanic.get_thickness();
             this->rock.oceanic.set_thickness(0);
@@ -61,7 +63,7 @@ namespace WorldBuilder {
         this->baseOffset = -1 * this->rock.mass() / worldAttributes.mantleDensity;
         
         // harden any sediment over 3k meters
-        // TODO add timestep
+        // TODO add timestep depencency
         if (this->rock.sediment.get_thickness() > 3000) {
             wb_float thicknessToHarden = (this->rock.sediment.get_thickness() - 3000)*0.25*timestep;
             //float massHardened = this->rock.sediment.density * thicknessToHarden;

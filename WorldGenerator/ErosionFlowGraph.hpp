@@ -2,6 +2,7 @@
 //  ErosionFlowGraph.hpp
 //  WorldGenerator
 //
+//  Data structures and logic for moving rock along a directed acyclic graph
 
 
 #ifndef ErosionFlowGraph_hpp
@@ -35,6 +36,12 @@ namespace WorldBuilder {
         }
     };
     
+    
+    /*************** Material Flow Node ***************/
+    /*
+     *
+     *
+     */
     class MaterialFlowNode {
         wb_float materialHeight;
         wb_float suspendedMaterialHeight;

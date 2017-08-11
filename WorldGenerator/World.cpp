@@ -39,10 +39,7 @@ namespace WorldBuilder {
         
         this->validate();
         
-        // update plate indices?
-        
-        // find a reasonable timestep (currently broken)
-        // should get fastest relative speeds
+        // find a reasonable timestep based on fastest relative speeds
         wb_float fastestRelativePlateSpeed = 0; // fastest plate speeds
         for (auto plateIt = this->plates.begin(), end = this->plates.end(); plateIt != end; plateIt++) {
             std::shared_ptr<Plate>& plate = plateIt->second;
@@ -56,8 +53,10 @@ namespace WorldBuilder {
                 }
             }
         }
-        // since we are on the unit sphere (assumed)
+        
+        // timestep such that the fastest cells will overlap by no more than one full cell angle
         timestep = this->cellSmallAngle / fastestRelativePlateSpeed;
+        // clamp between reasonable values
         if (timestep < minTimestep) {
             timestep = minTimestep;
         } else if (timestep > 10) {
@@ -70,36 +69,37 @@ namespace WorldBuilder {
 
         
         // movement phase
-        RockColumn initial, final;
-        initial = this->netRock();
+//        RockColumn initial, final;
+//        initial = this->netRock();
         updateTask.movement.start();
         this->columnMovementPhase(timestep);
         updateTask.movement.end();
-        final = this->netRock();
+//        final = this->netRock();
 //        std::cout << "Rock change after movement:" << std::endl;
 //        logColumnChange(initial, final, false, false);
-        initial = final;
+//        initial = final;
         
         // transistion phase
         updateTask.transition.start();
         this->transitionPhase(timestep);
         updateTask.transition.end();
-        final = this->netRock();
+//        final = this->netRock();
 //        std::cout << "Rock change after transition:" << std::endl;
 //        logColumnChange(initial, final, false, false);
-        initial = final;
+//        initial = final;
         
         // modification phase
         updateTask.modification.start();
         this->columnModificationPhase(timestep);
         updateTask.modification.end();
-        final = this->netRock();
+//        final = this->netRock();
 //        std::cout << "Rock change after modification:" << std::endl;
 //        logColumnChange(initial, final, false, false);
         
         return updateTask;
     }
     
+    // top level movement phase
     void World::columnMovementPhase(wb_float timestep){
         // move our plates
         this->movePlates(timestep);
@@ -121,6 +121,7 @@ namespace WorldBuilder {
         
     }
     
+    // top level transition phase
     void World::transitionPhase(wb_float timestep) {
         // normalize plate grid
         this->renormalizeAllPlates();
@@ -171,6 +172,7 @@ namespace WorldBuilder {
         this->updateTempurature();
     }
     
+    // top level modification phase
     void World::columnModificationPhase(wb_float timestep){
         // thermal first
         //RockColumn initial, final;
@@ -188,6 +190,8 @@ namespace WorldBuilder {
     }
     
 /****************************** Transistion ******************************/
+    
+    // adds new oceanic cells along plate boundaries where appropriate
     std::vector<std::shared_ptr<PlateCell>> World::riftPlate(std::shared_ptr<Plate> plate) {
         std::vector<std::shared_ptr<PlateCell>> cellsToAdd;
         
@@ -263,6 +267,9 @@ namespace WorldBuilder {
         return cellsToAdd;
     }
     
+    // recalculates which plate cells are on the edge of the plate
+    // updates a plate's center estimate
+    // could be moved to the Plate class
     void World::updatePlateEdges(std::shared_ptr<Plate> plate) {
         // clear the edgeCells
         plate->edgeCells.clear();
@@ -334,6 +341,7 @@ namespace WorldBuilder {
         plate->maxEdgeAngle = plate->maxEdgeAngle + 2 * this->cellSmallAngle;
     }
     
+    // knits the edges of plates together so the edge cells can interact
     void World::knitPlates(std::shared_ptr<Plate> plate) {
         
         for (auto&& plateIt : this->plates) {
@@ -402,6 +410,7 @@ namespace WorldBuilder {
         }
     }
     
+    // renormalize plates and transfer rock from cells that are too thin
     void World::renormalizeAllPlates() {
         // renormalize all plates
         for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
@@ -447,7 +456,8 @@ namespace WorldBuilder {
         }
     }
     
-    
+    // redistributes rock such that cells once again lay along the origional grid
+    // could be moved to the Plate class
     void World::renormalizePlate(std::shared_ptr<Plate> plate) {
         // if a cell has been moved, the rock needs to be copied to the displaced info section
         for (auto cellIt = plate->cells.begin(); cellIt != plate->cells.end(); cellIt++) {
@@ -584,6 +594,7 @@ namespace WorldBuilder {
     
     
     /*************** Supercontinent Cycle ***************/
+    // for splitting of large plates
     void World::supercontinentCycle(){
         // for cycle if plates have eaten each other (want more than two)
         if (this->age > this->supercontinentCycleDuration + this->supercontinentCycleStartAge || this->plates.size() <= 2) {
@@ -634,6 +645,8 @@ namespace WorldBuilder {
         }
     }
     
+    // splits a plate along a triple point such that the smaller angle around the split vertex is 2/3PI
+    // could be moved to Plate class
     std::pair<std::shared_ptr<Plate>, std::shared_ptr<Plate>> World::splitPlate(std::shared_ptr<Plate> plateToSplit){
         std::pair<std::shared_ptr<Plate>, std::shared_ptr<Plate>> newPlates;
         newPlates.first = std::make_shared<Plate>(0, this->nextPlateId()); // large
@@ -686,6 +699,7 @@ namespace WorldBuilder {
         return newPlates;
     }
     
+    // finds a viable triple point for the Plate, prefering continental cells
     std::tuple<Vec3, Vec3, Vec3> World::getSplitPoints(std::shared_ptr<Plate> plateToSplit){
         const GridVertex* firstVertex = this->getRandomContinentalVertex(plateToSplit);
         if (firstVertex == nullptr) {
@@ -723,6 +737,7 @@ namespace WorldBuilder {
     }
     
     // for splitting only
+    // should be renamed to reflect that oceanic cells can be returned if no continental available
     const GridVertex* World::getRandomContinentalVertex(std::shared_ptr<Plate> plateToSplit){
         std::vector<std::shared_ptr<PlateCell>> continentalCells;
         std::vector<std::shared_ptr<PlateCell>> oceanicCells;
@@ -754,6 +769,7 @@ namespace WorldBuilder {
     
 /****************************** Modification ******************************/
     /*************** Erosion ***************/
+    // simple smoothing erosion, rock moved to neighbors based on height difference
     void World::erodeThermalSmoothing(wb_float timestep) {
         
         for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
@@ -835,6 +851,7 @@ namespace WorldBuilder {
         }
     }
     
+    // flow graph water erosion with basin filling
     void World::erodeSedimentTransport(wb_float timestep){
         // sediment flow, does this want to be first???
         std::shared_ptr<MaterialFlowGraph> flowGraph = this->createFlowGraph(); // TODO don't create each phase, reuse the memory!
@@ -859,6 +876,7 @@ namespace WorldBuilder {
         }
     }
     
+    // Creates a unified flow graph from the knit plates
     // TODO need to add timestep, at least to suspension amounts
     std::shared_ptr<MaterialFlowGraph> World::createFlowGraph(){
         size_t cellCount = 0;

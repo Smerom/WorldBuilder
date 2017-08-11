@@ -2,6 +2,7 @@
 //  math.hpp
 //  WorldGenerator
 //
+//  Light weight vector math and algorithms specific to the Grid data structure
 
 
 #ifndef math_hpp

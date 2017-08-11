@@ -2,6 +2,7 @@
 //  BasicGenerator.hpp
 //  WorldGenerator
 //
+//  Simplest generator, circle of land around a point
 
 #ifndef BasicGenerator_hpp
 #define BasicGenerator_hpp

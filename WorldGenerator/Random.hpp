@@ -2,6 +2,7 @@
 //  Random.hpp
 //  WorldGenerator
 //
+//  Helper class for generating random values for various structures
 
 
 #ifndef Random_hpp

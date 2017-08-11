@@ -15,6 +15,7 @@ namespace WorldBuilder {
     static wb_float frictionCoeff = 0.01;
     
     bool badTransfer(Vec3 transfer){
+        // TODO can this be replaced by an isnormal check on each of the three coords?
         return (isnan(transfer[0]) ||
                 isnan(transfer[1]) ||
                 isnan(transfer[2]) ||

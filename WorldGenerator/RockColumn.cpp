@@ -8,10 +8,12 @@
 #include <iostream>
 
 namespace WorldBuilder {
+    
     RockSegment combineSegments(RockSegment one, RockSegment two){
         wb_float thickness;
         wb_float density;
         thickness = one.get_thickness() + two.get_thickness();
+        // if thickness is too small, don't compute new density, just use the same as the first segment
         if (thickness > float_epsilon) {
             density = std::abs((one.get_density()*one.get_thickness() + two.get_density()*two.get_thickness()) / thickness);
         } else {
@@ -32,6 +34,7 @@ namespace WorldBuilder {
     RockColumn RockColumn::removeThickness(wb_float thickness){
         wb_float remainingThickness = thickness;
         
+        // remove starting from the top of the column
         RockColumn removedColumn;
         // sediment
         if (remainingThickness - this->sediment.get_thickness() > 0) {
@@ -93,6 +96,7 @@ namespace WorldBuilder {
     
     void logColumnChange(RockColumn initial, RockColumn final, bool logSedCont, bool logNet){
         std::cout.precision(6);
+        // log net rock vs change in thickness (both log fraction)
         if (logNet) {
             if (logSedCont) {
                 std::cout << "Sed+Cont is    " << std::scientific << final.sediment.get_thickness() + final.continental.get_thickness() << " or " << std::fixed << (final.sediment.get_thickness() + final.continental.get_thickness()) / initial.continental.get_thickness() << " of Origional" << std::endl;

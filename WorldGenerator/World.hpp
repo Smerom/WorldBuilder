@@ -2,6 +2,16 @@
 //  World.hpp
 //  WorldGenerator
 //
+//  The World!
+//  Most of the heavy lifting is done here
+//  Any process requiring interaction between parts of different plates goes here
+//
+//  Modification is done in three phases
+//  Movement -- any process that moves plates and cells round without redistributing rock. Cannot add or delete plates or cells
+//  Transition -- any redistribution required after movement, updates data structures and graphs (such as plate edge connections).
+//                Can move or modify anything, but should be restricted to process that can't be run in parellel with modification or movement respectively
+//  Modification -- any process that add, removes, or moves rock around (errosion, volcanism, ect.)
+//  Movement of the next timestep can be run while the previous timestep is still running its Modification phase 
 
 
 #ifndef World_hpp
@@ -85,7 +95,7 @@ namespace WorldBuilder {
         
         
         
-        void clean();
+        
         
         /*************** Transistion ***************/
         void transitionPhase(wb_float timestep);

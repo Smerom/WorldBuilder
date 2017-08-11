@@ -2,6 +2,8 @@
 //  Plate.hpp
 //  WorldGenerator
 //
+//  A self contained plate
+//  Should hold logic for internal plate interaction (only)
 
 
 #ifndef Plate_hpp
@@ -43,11 +45,13 @@ namespace WorldBuilder {
         
         Plate(uint32_t initialCellCount, uint32_t ourId);
         
-        void updateCellRadii();
+        void updateCellRadii(); // radius from plate pole, used for momentum tracking
         
         size_t surfaceSize() const; // number of surface cells, not threadsafe
-        void move(wb_float timestep);
+        void move(wb_float timestep); // updates rotation matrix
         void homeostasis(const WorldAttributes, wb_float timestep);
+        
+        // transforms as point in local coordinates to world coordinates
         Vec3 localToWorld(Vec3 local){
             return math::affineRotaionMulVec(this->rotationMatrix, local);
         }

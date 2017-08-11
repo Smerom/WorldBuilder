@@ -2,6 +2,8 @@
 //  RockColumn.hpp
 //  WorldGenerator
 //
+//  Data structures representing a column of rock
+//  May describe: a section of the lithosphere, a section of rock being transfered between cells, net rock within a plate, ect
 
 #ifndef RockColumn_hpp
 #define RockColumn_hpp
@@ -10,7 +12,8 @@
 #include <cmath>
 
 namespace WorldBuilder {
-    // section of rock with specific properties
+    
+    // A section of rock with specific properties based roughly on rock type (currently estimates of continental, oceanic crust, ect)
     class RockSegment {
         wb_float density;
         wb_float thickness;
@@ -31,7 +34,7 @@ namespace WorldBuilder {
         }
         void set_thickness(wb_float newThickness){
             if (!std::isfinite(newThickness) || newThickness < 0) {
-                throw std::invalid_argument("Invalid Thickness, must be >0 finite");
+                throw std::invalid_argument("Invalid Thickness, must be >=0 and finite");
             }
             thickness = newThickness;
         }
@@ -41,6 +44,7 @@ namespace WorldBuilder {
         }
     };
     RockSegment combineSegments(RockSegment one, RockSegment two);
+    
     // Bunch of rock
     struct RockColumn {
         RockSegment sediment;
@@ -65,10 +69,14 @@ namespace WorldBuilder {
             }
             return false;
         }
+        
+        // removes rock from the top of the column until thickness has been removed
         RockColumn removeThickness(wb_float thickness);
     };
+    // combines rock columns, may want to be renamed to combineColumns
     RockColumn accreteColumns(RockColumn one, RockColumn two);
     
+    // Helper function for logging changes in rock columns
     void logColumnChange(RockColumn initial, RockColumn final, bool logSedCont, bool logNet);
 }
 

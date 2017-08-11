@@ -2,6 +2,8 @@
 //  PlateCell.hpp
 //  WorldGenerator
 //
+//  Data structures representing a Plate Cell
+//  Primarily record keeping, minimal logic relating to timestep updates
 
 #ifndef PlateCell_hpp
 #define PlateCell_hpp
@@ -17,10 +19,10 @@ namespace WorldBuilder {
     
     class PlateCell;
     /***************  Edge Cell Info ***************/
-    /*
+    /*  Additional info required for Plate Cells on the edge of a plate
      *
      *
-     *
+     * Record keeping only
      */
     struct EdgeNeighbor {
         uint32_t plateIndex;
@@ -29,10 +31,18 @@ namespace WorldBuilder {
     };
     class EdgeCellInfo {
     public:
+        // EdgeNeighbor currently duplicates information held in the key
         std::unordered_map<uint64_t, EdgeNeighbor> otherPlateNeighbors; // lower 32 bits are cell index, higher are plate index
         std::unordered_map<uint32_t, uint32_t> otherPlateLastNearest; // plate -> cell index
     };
     
+    
+    /***************  Displacement Info ***************/
+    /*  Represents the displacement of a Plate Cell from its origional location
+     *  Used when a plate is deformed by any geologic process (currently convergent boundaries only)
+     *
+     *  Record keeping only
+     */
     class DisplacementInfo {
     public:
         Vec3 displacementLocation;
@@ -50,7 +60,7 @@ namespace WorldBuilder {
      *  Used for tracking rock
      *  And effects between Plates
      *
-     *  Methods should only be record keeping
+     *
      */
     class PlateCell {
         friend class World;
@@ -76,6 +86,8 @@ namespace WorldBuilder {
         
         PlateCell(const GridVertex* vertex);
         
+        
+        // simple 
         void homeostasis(const WorldAttributes, wb_float timestep);
         
         wb_float get_elevation() const;

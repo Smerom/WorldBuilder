@@ -2,6 +2,7 @@
 //  Defines.h
 //  WorldGenerator
 //
+//  File for constants and simple classes accessed throughout the project
 
 #ifndef Defines_h
 #define Defines_h
@@ -14,19 +15,22 @@ namespace WorldBuilder {
     // define custom float type for easy presision switching
     typedef double wb_float;
     
+    // epsilon that we consider for close enough to equal numbers
     static const wb_float float_epsilon = 0.00001;
     
+    // age before which new cells that collide are simply removed (as the probably shouldn't have been created in the first place
     static const wb_float min_interaction_age = 10.0;
     
 /*************** World Attributes ***************/
     struct WorldAttributes {
-        float mantleDensity;
-        float radius;
-        float sealevel;
-        float waterDensity;
+        wb_float mantleDensity;
+        wb_float radius;
+        wb_float sealevel;
+        wb_float waterDensity;
     };
     
 /*************** World Step time tracking ***************/
+    // used for coarse grained performance tracking
     class TaskTracker {
     public:
         void start(){

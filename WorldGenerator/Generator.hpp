@@ -2,6 +2,7 @@
 //  Generator.hpp
 //  WorldGenerator
 //
+//  Absract Class for initialization of landmass
 
 #ifndef Generator_hpp
 #define Generator_hpp

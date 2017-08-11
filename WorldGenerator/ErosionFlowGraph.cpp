@@ -11,6 +11,9 @@
 
 namespace WorldBuilder {
     
+    
+/****************************** Material Flow Node ******************************/
+
     bool compareElevations(const MaterialFlowNode& left, const MaterialFlowNode& right){
         return left.elevation() < right.elevation();
     }
@@ -53,61 +56,6 @@ namespace WorldBuilder {
                 flowEdge->materialHeight = flowEdge->weight * suspendedMaterial*0.99;
                 totalMaterialMoved += flowEdge->weight * suspendedMaterial*0.99;
             }
-            
-            
-            
-//            // if we didn't move any material, need to smooth with inflow neighbors
-//            // taken from thermal smothing, with very high erosion rate (0.9)
-//            // could cause negative desired material height if neighbors are somehow now lower in elevation than this one
-//            if (totalMaterialMoved == 0) {
-//                // gather all within two
-//                std::unordered_set<MaterialFlowNode*> targets;
-//                targets.insert(this);
-//                
-//                for(auto&& flowEdge : this->inflowTargets) {
-//                    auto testNode = targets.find(flowEdge->source);
-//                    if (testNode == targets.end()) {
-//                        targets.insert(flowEdge->source);
-//                    }
-//                    for(auto&& secondIn : flowEdge->source->inflowTargets) {
-//                        auto testInNode = targets.find(secondIn->source);
-//                        if (testInNode == targets.end()) {
-//                            targets.insert(flowEdge->source);
-//                        }
-//                    }
-//                    for(auto&& secondOut : flowEdge->source->outflowTargets) {
-//                        auto testOutNode = targets.find(secondOut->source);
-//                        if (testOutNode == targets.end()) {
-//                            targets.insert(flowEdge->source);
-//                        }
-//                    }
-//                }
-//                
-//                
-//                wb_float distributionCount = targets.size();
-//                wb_float effectiveElevation = this->elevation() + suspendedMaterial;
-//                for(auto&& node : targets) {
-//                    if (node != this) {
-//                        wb_float movedMaterial = (effectiveElevation - node->elevation()) * 0.98 / distributionCount;
-//                        if (movedMaterial > 0) {
-//                            node->set_materialHeight(node->get_materialHeight() + movedMaterial);
-//                            totalMaterialMoved += movedMaterial;
-//                        }
-//                    }
-//                }
-//
-//
-//                wb_float upslopeCount = this->inflowTargets.size();
-//                wb_float effectiveElevation = this->elevation() + suspendedMaterial;
-//                for (auto&& flowEdge : this->inflowTargets)
-//                {
-//                    wb_float movedMaterial = (effectiveElevation - flowEdge->source->elevation()) * 0.9 / upslopeCount;
-//                    if (movedMaterial > 0) {
-//                        flowEdge->source->set_materialHeight(flowEdge->source->get_materialHeight() + movedMaterial);
-//                        totalMaterialMoved += movedMaterial;
-//                    }
-//                }
-//            }
             
             
             // remove material, suspended from this cell plus any discrepancy between suspended and total moved, if possible
@@ -163,7 +111,7 @@ namespace WorldBuilder {
     
     
     
-    
+/****************************** MaterialFlowBasin ******************************/
     
     BasinFillingResult MaterialFlowBasin::fillNext(){
         BasinFillingResult result;
@@ -267,8 +215,8 @@ namespace WorldBuilder {
     
     
     
-    
-    
+/****************************** Material Flow Graph ******************************/
+
     bool MaterialFlowGraph::checkWeights() const {
         for (size_t index = 0; index < this->nodeCount; index++) {
             if (!this->nodes[index].checkWeight()) {

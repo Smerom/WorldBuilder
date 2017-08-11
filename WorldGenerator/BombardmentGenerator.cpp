@@ -18,10 +18,10 @@ namespace WorldBuilder {
         
         wb_float prehistoricRootThickness = 125000 + 100000; // some continental, plus root to melt
         
-        // create a nice smooth world
         auto plateIt = theWorld->get_plates().find(0);
         if (plateIt != theWorld->get_plates().end()) {
             std::shared_ptr<Plate> plate = plateIt->second;
+            // start with a nice smooth world
             for (auto&& cellIt : plate->cells)
             {
                 std::shared_ptr<PlateCell>& cell = cellIt.second;
@@ -29,7 +29,8 @@ namespace WorldBuilder {
                 cell->rock.root.set_density(3200);
                 cell->rock.root.set_thickness(prehistoricRootThickness);
             }
-            // create our impact crater vector, crater radii
+            
+            // create our impact crater radii
             std::vector<wb_float> impacts;
             // big boys
             impacts.push_back(2500 / theWorld->get_attributes().radius);
@@ -59,11 +60,12 @@ namespace WorldBuilder {
                 impacts.push_back(radius / theWorld->get_attributes().radius);
             }
             
+            // Throw the rocks!
             std::vector<wb_float> materialValue;
             std::vector<PlateCell*> ejectaCells;
             for (auto&& impactRadius : impacts)
             {
-                Vec3 randomPoint = this->randomSource->getRandomPointUnitSphere();
+                Vec3 randomCollisionLocation = this->randomSource->getRandomPointUnitSphere();
                 wb_float craterRadius = impactRadius * theWorld->get_attributes().radius*1000;
                 
                 RockColumn materialEjected;
@@ -79,7 +81,7 @@ namespace WorldBuilder {
                 for (auto&& cellIt : plate->cells)
                 {
                     std::shared_ptr<PlateCell>& cell = cellIt.second;
-                    wb_float distance = math::distanceBetween3Points(randomPoint, cell->get_vertex()->get_vector());
+                    wb_float distance = math::distanceBetween3Points(randomCollisionLocation, cell->get_vertex()->get_vector());
                     // for now just remove material in a symetrical manner
                     if (distance < impactRadius) {
                         tilesWithin++;
@@ -110,7 +112,7 @@ namespace WorldBuilder {
                     // from r to 2r x*( 3/(r*sqrt(2*pi))*( e^-((x-r)^2/(2*r^2/9)) ) )^2 integrates to 0.50270049114536518
                     // at a rotation about the y axis
                     //const float ejectaFactor = 1 / 0.50270049114536518;
-                    wb_float distance = math::distanceBetween3Points(randomPoint, cell->get_vertex()->get_vector());
+                    wb_float distance = math::distanceBetween3Points(randomCollisionLocation, cell->get_vertex()->get_vector());
                     distance = distance * theWorld->get_attributes().radius * 1000; // to meters
                     
                     // exponential, starts with cliff edge however
@@ -119,9 +121,9 @@ namespace WorldBuilder {
                     //float k = 2.0;
                     //float omega = (craterRadius)/9;
                     //float norm = 1/(powf(omega, k))*powf(distance - craterRadius, k - 1)*expf(-1*(distance - craterRadius)/omega);
-                    /*float distributionFactor = (3 / (craterRadius*sqrtf(2*M_PI))*norm*norm);
-                     float areaFactor = (M_PI*(2*craterRadius)*(2*craterRadius) - M_PI*craterRadius*craterRadius) / (theWorld->get_cellDistanceMeters() * theWorld->get_cellDistanceMeters());
-                     float materialPercentage = distributionFactor * ejectaFactor * tilesWithout;*/
+                    //float distributionFactor = (3 / (craterRadius*sqrtf(2*M_PI))*norm*norm);
+                    //float areaFactor = (M_PI*(2*craterRadius)*(2*craterRadius) - M_PI*craterRadius*craterRadius) / (theWorld->get_cellDistanceMeters() * theWorld->get_cellDistanceMeters());
+                    //float materialPercentage = distributionFactor * ejectaFactor * tilesWithout;
                     materialValue.push_back(norm);
                     totalPercent += norm;
                 }
@@ -158,6 +160,7 @@ namespace WorldBuilder {
             {
                 std::shared_ptr<PlateCell>& cell = cellIt.second;
                 
+                // remove any extra root thickness
                 wb_float meltToThickness = cell->rock.root.get_thickness() - 100000;
                 // check to see if desired thickness is too small, may want to melt from other cells
                 if (meltToThickness < theWorld->get_divergentOceanicColumn().root.get_thickness()) {

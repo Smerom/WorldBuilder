@@ -2,6 +2,8 @@
 //  MomentumTracker.hpp
 //  WorldGenerator
 //
+//  Tracks angular momentum changes such that Plate angular velocites can be recalculated during the transition phase
+//  Allows for a momentum conservative system
 
 
 #ifndef MomentumTracker_hpp

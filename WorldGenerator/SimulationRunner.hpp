@@ -14,7 +14,7 @@ namespace WorldBuilder {
     class World;
 /***************  Base Simulation Runner ***************/
 /*  Responsible for running simulation to a certain endpoint
- *  This base runner simply runs for a number of timesteps
+ *  This base runner simply runs for a number of timesteps before returning
  */
     class SimulationRunner {
     private:
@@ -27,7 +27,7 @@ namespace WorldBuilder {
 
         // should be placed in specific child class
         uint_fast32_t runTimesteps;
-        float runMinTimestep;
+        wb_float runMinTimestep;
     public:
         
         bool shouldLogRunTiming;
@@ -54,7 +54,7 @@ namespace WorldBuilder {
         void set_runTimesteps(uint_fast32_t timesteps){
             this->runTimesteps = timesteps;
         }
-        void set_runMinTimestep(float minTimestep){
+        void set_runMinTimestep(wb_float minTimestep){
             this->runMinTimestep = minTimestep;
         }
     }; // class SimulationRunner

@@ -2,6 +2,7 @@
 //  BombardmentGenerator.hpp
 //  WorldGenerator
 //
+//  World landmass initialized through cratering
 
 #ifndef BombardmentGenerator_hpp
 #define BombardmentGenerator_hpp
