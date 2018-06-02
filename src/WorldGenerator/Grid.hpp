@@ -9,7 +9,7 @@
 #ifndef Grid_hpp
 #define Grid_hpp
 
-#include "Basic.pb.h"
+#include "api/Basic.pb.h"
 #include "math.hpp"
 
 namespace WorldBuilder {

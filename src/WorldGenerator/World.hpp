@@ -26,6 +26,7 @@
 #include "Defines.h"
 #include "ErosionFlowGraph.hpp"
 #include "MomentumTracker.hpp"
+#include "VolcanicHotspot.hpp"
 
 namespace WorldBuilder {
     struct LocationInfo {
@@ -60,6 +61,9 @@ namespace WorldBuilder {
         wb_float cellSmallAngle;
         
         wb_float age;
+        
+        std::unordered_set<std::shared_ptr<VolcanicHotspot>> hotspots;
+        wb_float availableHotspotThickness;
         
         wb_float supercontinentCycleStartAge;
         wb_float supercontinentCycleDuration;
@@ -130,6 +134,9 @@ namespace WorldBuilder {
         
         void erodeThermalSmoothing(wb_float timestep);
         void erodeSedimentTransport(wb_float timestep);
+        
+        void processAllHotspots(wb_float timestep);
+        wb_float processHotspot(std::shared_ptr<VolcanicHotspot> hotspot, wb_float timestep);
         
         /*************** Modification Aux ***************/
         std::shared_ptr<MaterialFlowGraph> createFlowGraph();

@@ -15,8 +15,8 @@
 #include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
 
-#include "Basic.pb.h"
-#include "Basic.grpc.pb.h"
+#include "api/Basic.pb.h"
+#include "api/Basic.grpc.pb.h"
 #include "SimulationRunner.hpp"
 #include "BasicGenerator.hpp"
 #include "BombardmentGenerator.hpp"

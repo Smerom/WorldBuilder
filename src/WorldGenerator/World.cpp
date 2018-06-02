@@ -174,6 +174,9 @@ namespace WorldBuilder {
     
     // top level modification phase
     void World::columnModificationPhase(wb_float timestep){
+        
+        this->processAllHotspots(timestep);
+        
         // thermal first
         //RockColumn initial, final;
         //initial = this->netRock();
@@ -1049,6 +1052,82 @@ namespace WorldBuilder {
         return graph;
     }
     
+    /*************** Volcanism ***************/
+    void World::processAllHotspots(wb_float timestep) {
+        
+        
+        // add thickness (currently roughly bassed on hawaii seamount chain)
+        this->availableHotspotThickness += 8500*5*timestep * 10;
+        
+        wb_float usedThickness = 0;
+        for(auto&& hotspot : this->hotspots) {
+            usedThickness += processHotspot(hotspot, timestep);
+        }
+        
+        this->availableHotspotThickness -= usedThickness;
+        
+        // create a hotspot if we don't have enough
+        if (this->hotspots.size() < 10) {
+            std::shared_ptr<VolcanicHotspot> theHotspot = std::make_shared<VolcanicHotspot>();
+            theHotspot->weight = 1;
+            theHotspot->worldLocation = this->randomSource->getRandomPointUnitSphere();
+            
+            // update weights
+            for(auto&& hotspot : this->hotspots) {
+                hotspot->weight = hotspot->weight * this->hotspots.size() / (this->hotspots.size() + 1);
+            }
+            theHotspot->weight = theHotspot->weight / (this->hotspots.size() + 1);
+            
+            this->hotspots.insert(theHotspot);
+        }
+        
+        
+    }
+    
+    wb_float World::processHotspot(std::shared_ptr<VolcanicHotspot> hotspot, wb_float timestep) {
+        
+        // find the relavent plate cell
+        std::vector<std::shared_ptr<PlateCell>> validCells;
+        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
+            std::shared_ptr<Plate> plate = plateIt->second;
+            
+            // check if we can interact
+            Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
+            wb_float testAngle = math::angleBetweenUnitVectors(locationInLocal, plate->center);
+            if (plate->maxEdgeAngle == 0 || testAngle < plate->maxEdgeAngle || std::isnan(testAngle)) {
+                uint32_t hint = 0;
+                // get our last closest cell index for this plate
+                if (hotspot->closestPlateCellIndex.find(plate->id) != hotspot->closestPlateCellIndex.end()) {
+                    hint = hotspot->closestPlateCellIndex.find(plate->id)->second;
+                }
+                uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
+                // update neareset
+                hotspot->closestPlateCellIndex[plate->id] = nearestIndex;
+                
+                // check if in plate
+                auto nearestIt = plate->cells.find(nearestIndex);
+                if (nearestIt != plate->cells.end()) {
+                    validCells.push_back(nearestIt->second);
+                }
+            }
+        }
+        
+        
+        wb_float usedThickness = 0;
+        if (validCells.size() > 0) {
+            // add the weighted thickness
+            // TODO add timestep dependence
+            wb_float usedThickness = this->availableHotspotThickness * hotspot->weight;
+            
+            // add percent to each valid cell
+            for(auto && cell : validCells) {
+                cell->rock.continental.set_thickness(cell->rock.continental.get_thickness() + usedThickness/validCells.size());
+            }
+        }
+        
+        return usedThickness;
+    }
+    
 /****************************** Movement ******************************/
     
     struct CellDeleteTarget {
@@ -1431,7 +1510,7 @@ namespace WorldBuilder {
     }
     
     /*************** Constructors ***************/
-    World::World(Grid *theWorldGrid, std::shared_ptr<Random> random) : worldGrid(theWorldGrid), plates(10), randomSource(random), _nextPlateId(0){
+    World::World(Grid *theWorldGrid, std::shared_ptr<Random> random) : worldGrid(theWorldGrid), plates(10), randomSource(random), _nextPlateId(0), availableHotspotThickness(0){
         // set default rock column
         this->divergentOceanicColumn.root = RockSegment(84000.0, 3200.0);
         this->divergentOceanicColumn.oceanic = RockSegment(6000.0, 2890.0);

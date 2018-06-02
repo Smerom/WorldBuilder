@@ -20,7 +20,7 @@ namespace WorldBuilder {
     
     void MaterialFlowNode::upTreeFlow(){
         if (this->touched == false) {
-            // touch self
+            // touch self (TODO: race condition!!!!!! comp swap it!)
             this->touched = true;
             
             // flow up
