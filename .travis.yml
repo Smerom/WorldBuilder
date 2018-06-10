@@ -6,4 +6,4 @@ compiler:
 os:
   - linux
 before_install: ./get-deps.sh
-script: make debug
+script: make & make debug
