@@ -1,8 +1,13 @@
 which clang
+echo "a"
 which clang++
+echo "a"
 sudo which clang
+echo "a"
 sudo which clang++
+echo "a"
 sudo -i which clang++
+echo "a"
 sudo -s which clang++
 # cd ~/
 # sudo apt-get update
