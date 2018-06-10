@@ -13,6 +13,8 @@ OBJ_DIR = ./obj/WorldGenerator
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
 
+.DEFAULT_GOAL := setup
+
 debug: $(API_OBJ_FILES) $(OBJ_FILES)
 	$(CC) $(LDFLAGS) -o $@ $^
 
@@ -26,3 +28,8 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 clean:
 	rm obj/api/*
 	rm obj/WorldGenerator/*
+
+setup:
+	[[ -d obj ]] || mkdir obj
+	[[ -d obj/api ]] || mkdir obj/api
+	[[ -d obj/WorldGenerator ]] || mkdir obj/WorldGenerator
