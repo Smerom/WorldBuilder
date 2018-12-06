@@ -30,8 +30,8 @@ jobs:
             git submodule update --init
             make
             sudo -i make install
-      - run:
-          name: get clang
-          command: |
-            sudo apt-get clang-6.0 lldb-6.0 lld-6.0
+      # - run:
+      #     name: get clang
+      #     command: |
+      #       sudo apt-get clang-6.0 lldb-6.0 lld-6.0
       
