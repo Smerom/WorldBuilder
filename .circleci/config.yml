@@ -2,13 +2,14 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: docker:debian
     steps:
       - checkout
+      - run: sudo apt-get update
+      - run: sudo apt-get git
       - run:
           name: Get things
           command: |
-            sudo apt-get update
             sudo apt-get install autoconf automake libtool curl make g++ unzip
             sudo apt-get install build-essential pkg-config
       - run:
