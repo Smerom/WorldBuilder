@@ -16,7 +16,7 @@ jobs:
           name: protobuf
           command: |
             curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz
-            tar -xzf --no-same-owner protobuf-cpp-3.6.1.tar.gz
+            tar -xzf protobuf-cpp-3.6.1.tar.gz --no-same-owner 
             cd protobuf-3.6.1
             ./configure
             make
