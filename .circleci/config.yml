@@ -5,13 +5,13 @@ jobs:
       - image: debian:jessie
     steps:
       - checkout
-      - run: sudo apt-get update
-      - run: sudo apt-get git
+      - run: apt-get update
+      - run: apt-get git
       - run:
           name: Get things
           command: |
-            sudo apt-get install autoconf automake libtool curl make g++ unzip
-            sudo apt-get install build-essential pkg-config
+            apt-get install autoconf automake libtool curl make g++ unzip
+            apt-get install build-essential pkg-config
       - run:
           name: protobuf
           command: |
@@ -21,8 +21,8 @@ jobs:
             ./configure
             make
             make check
-            sudo -i make install
-            sudo ldconfig # refresh shared library cache.
+            make install
+            ldconfig # refresh shared library cache.
       - run:
           name: grpc
           command: |
@@ -30,9 +30,9 @@ jobs:
             cd grpc
             git submodule update --init
             make
-            sudo -i make install
+            make install
       # - run:
       #     name: get clang
       #     command: |
-      #       sudo apt-get clang-6.0 lldb-6.0 lld-6.0
+      #       apt-get clang-6.0 lldb-6.0 lld-6.0
       
