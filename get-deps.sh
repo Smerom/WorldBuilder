@@ -2,9 +2,9 @@ cd ~/
 sudo apt-get update
 sudo apt-get install autoconf automake libtool curl make g++ unzip
 sudo apt-get install build-essential pkg-config
-curl -OL https://github.com/google/protobuf/releases/download/v3.5.1/protobuf-cpp-3.5.1.tar.gz
-tar -xzf protobuf-cpp-3.5.1.tar.gz
-cd protobuf-3.5.1
+curl -OL https://github.com/google/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz
+tar -xzf protobuf-cpp-3.6.1.tar.gz
+cd protobuf-3.6.1
 ./configure
 make
 make check
