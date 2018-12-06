@@ -6,12 +6,12 @@ jobs:
     steps:
       - checkout
       - run: apt-get update
-      - run: apt-get install git
+      - run: apt-get install git -y
       - run:
           name: Get things
           command: |
-            apt-get install autoconf automake libtool curl make g++ unzip
-            apt-get install build-essential pkg-config
+            apt-get install autoconf automake libtool curl make g++ unzip -y
+            apt-get install build-essential pkg-config -y
       - run:
           name: protobuf
           command: |
