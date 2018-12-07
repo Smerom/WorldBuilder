@@ -1,5 +1,5 @@
 CXX = clang++-6.0
-CPPFLAGS = -x c++ -Wall -Wextra -g -march=native -std=c++14 -stdlib=libc++ -O3 -I/usr/local/include -I./src $(shell pkg-config --cflags protobuf grpc++)
+CPPFLAGS = -x c++ -Wall -Wextra -g -march=native -std=c++14 -stdlib=libc++ -O3 -I/usr/local/include -I./src $(shell pkg-config --cflags protobuf grpc)
 
 LDFLAGS = -L/usr/local/lib $(shell pkg-config --libs protobuf grpc++)
 
