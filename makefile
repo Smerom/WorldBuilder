@@ -1,7 +1,7 @@
 CXX = clang++-6.0
 CPPFLAGS = -x c++ -Wall -Wextra -g -march=native -std=c++14 -stdlib=libc++ -O3 -I/usr/local/include -I./src $(shell pkg-config --cflags protobuf grpc)
 
-LDFLAGS = -L/usr/local/lib $(shell pkg-config --libs protobuf grpc++)
+LDFLAGS = -L/usr/local/lib -stdlib=libc++ -lc++ -lc++abi $(shell pkg-config --libs protobuf grpc++)
 
 API_SRC_DIR = ./src/api
 API_OBJ_DIR = ./obj/api
