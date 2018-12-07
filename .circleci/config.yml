@@ -5,34 +5,21 @@ jobs:
       - image: debian:jessie
     steps:
       - checkout
-      - run: apt-get update
-      - run: apt-get install git -y
+      - setup_remote_docker
+          version: 18.05.0-ce
       - run:
-          name: Get things
+          name: Install Docker client
           command: |
-            apt-get install autoconf automake libtool curl make g++ unzip -y
-            apt-get install build-essential pkg-config -y
+            set -x
+            VER="18.05.0-ce"
+            curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
+            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+            mv /tmp/docker/* /usr/bin
       - run:
-          name: protobuf
+          name: Build image
           command: |
-            curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz
-            tar -xzf protobuf-cpp-3.6.1.tar.gz --no-same-owner 
-            cd protobuf-3.6.1
-            ./configure
-            make
-            make check
-            make install
-            ldconfig # refresh shared library cache.
-      - run:
-          name: grpc
-          command: |
-            git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
-            cd grpc
-            git submodule update --init
-            make
-            make install
-      # - run:
-      #     name: get clang
-      #     command: |
-      #       apt-get clang-6.0 lldb-6.0 lld-6.0
+            cd .circleci/docker
+            docker build -t wbtest .
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push wbtest
       
