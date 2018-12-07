@@ -37,6 +37,8 @@ RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.
     && cd .. \
     && rm -rf protobuf-cpp-3.6.1.tar.gz \
     && rm -rf ./protobuf-3.6.1 \
+    && export CC="clang-6.0" \
+    && export CXX="clang++-6.0" \
     && git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc \
     && cd grpc \
     && git submodule update --init \
