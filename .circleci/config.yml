@@ -52,7 +52,7 @@ jobs:
           name: Build
           command: |
             make
-            make proto
+            make protoc
             make debug
 
 workflows:
