@@ -2,7 +2,7 @@
 FROM debian:9
 
 RUN apt-get update \
-    && apt-get install wget \
+    && apt-get install -y wget \
     && wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add - \
     && apt-get install -y software-properties-common \
     && apt-add-repository "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-6.0 main" \
