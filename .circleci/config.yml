@@ -8,10 +8,10 @@ jobs:
       - setup_remote_docker:
           version: 18.05.0-ce
       - run:
-        name: Install reqs
-        command: |
-          apt-get update
-          apt-get install curl unzip
+          name: Install reqs
+          command: |
+            apt-get update
+            apt-get install curl unzip
       - run:
           name: Install Docker client
           command: |
