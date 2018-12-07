@@ -26,7 +26,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 protoc:
 	protoc --cpp_out=src/api -Isrc/proto src/proto/Basic.proto
-	protoc --grpc_out=src/api -Isrc/proto src/proto/Basic.proto
+	protoc --grpc_out=src/api -Isrc/proto --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` src/proto/Basic.proto
 
 clean:
 	rm obj/api/*
