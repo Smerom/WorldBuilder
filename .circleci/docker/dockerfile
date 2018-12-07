@@ -13,6 +13,7 @@ RUN apt-get update \
     libtool \
     curl \
     make \
+    g++ \
     unzip \
     build-essential \
     pkg-config \
