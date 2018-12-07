@@ -27,7 +27,8 @@ RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.
     && cd protobuf-3.6.1 \
     && export CXXFLAGS="-std=c++14 -stdlib=libc++" \
     && export LDFLAGS="-stdlib=libc++ -lc++ -lc++abi" \
-    && ./configure CC="clang-6.0" CXX_FOR_BUILD="clang++-6.0" CXX='clang++-6.0' \
+    && export LDXXFLAGS="-stdlib=libc++ -lc++ -lc++abi" \
+    && ./configure CC="clang-6.0" CXX_FOR_BUILD="clang++-6.0" CXX="clang++-6.0" \
     # && grep g++ Makefile | grep -v clang \
     # && grep clang++ Makefile \
     && make \
@@ -39,6 +40,7 @@ RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.
     && rm -rf ./protobuf-3.6.1 \
     && export CC="clang-6.0" \
     && export CXX="clang++-6.0" \
+    && export LDXX="clang++-6.0 -stdlib=libc++" \
     && git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc \
     && cd grpc \
     && git submodule update --init \
