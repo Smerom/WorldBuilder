@@ -19,7 +19,8 @@ RUN apt-get update \
     pkg-config \
     clang-6.0 \
     lldb-6.0 \
-    lld-6.0
+    lld-6.0 \
+    libc++-dev
 RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz \
     && tar -xzf protobuf-cpp-3.6.1.tar.gz --no-same-owner \
     && cd protobuf-3.6.1 \
