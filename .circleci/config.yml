@@ -1,0 +1,65 @@
+version: 2
+jobs:
+  build_image:
+    docker:
+      - image: circleci/golang:1.11 # go for faster launch, don't actually need it
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 18.06.0-ce
+      - restore_cache:
+          keys:
+            - build-img-{{ checksum ".circleci/docker/dockerfile" }}
+      - run:
+          name: Check for build
+          command: |
+            if [[ ! -f .circleci/imgbuilt ]]; then
+              echo 'export NEEDS_BUILD="true"' >> $BASH_ENV
+            fi
+
+      - run:
+          name: Install reqs
+          command: |
+            if [[ ${NEEDS_BUILD} = "true" ]]; then
+              sudo apt-get update
+              sudo apt-get install curl unzip -y
+            fi
+
+      - run:
+          name: Build image
+          command: |
+            if [[ ${NEEDS_BUILD} = "true" ]]; then
+              cd .circleci/docker
+              docker build -t smerom/wbtest:default .
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              docker push smerom/wbtest:default
+            fi
+
+      - run:
+          name: touch cache
+          command: touch .circleci/imgbuilt
+      - save_cache:
+          key: build-img-{{ checksum ".circleci/docker/dockerfile" }}
+          paths:
+            - .circleci/imgbuilt
+
+  build:
+    docker:
+      - image: smerom/wbtest:default
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: |
+            make
+            make protoc
+            make debug
+
+workflows:
+  version: 2
+  build_test:
+    jobs:
+      - build_image
+      - build:
+          requires:
+            - build_image

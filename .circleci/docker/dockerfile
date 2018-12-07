@@ -1,0 +1,51 @@
+# VERS: 0.0.1
+FROM debian:9
+RUN apt-get update \
+    && apt-get install -y wget gnupg \
+    && wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add - \
+    && apt-get install -y software-properties-common \
+    && apt-add-repository "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-6.0 main" \
+    && apt-get update \
+    && apt-get install -y \
+    git \
+    autoconf \
+    automake \
+    libtool \
+    curl \
+    make \
+    g++ \
+    unzip \
+    build-essential \
+    pkg-config \
+    clang-6.0 \
+    lldb-6.0 \
+    lld-6.0 \
+    libc++-dev \
+    libc++abi-dev
+RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz \
+    && tar -xzf protobuf-cpp-3.6.1.tar.gz --no-same-owner \
+    && cd protobuf-3.6.1 \
+    && export CXXFLAGS="-std=c++14 -stdlib=libc++" \
+    && export LDFLAGS="-stdlib=libc++ -lc++ -lc++abi" \
+    && export LDXXFLAGS="-stdlib=libc++ -lc++ -lc++abi" \
+    && ./configure CC="clang-6.0" CXX_FOR_BUILD="clang++-6.0" CXX="clang++-6.0" \
+    # && grep g++ Makefile | grep -v clang \
+    # && grep clang++ Makefile \
+    && make \
+    && make check \
+    && make install \
+    && ldconfig \
+    && cd .. \
+    && rm -rf protobuf-cpp-3.6.1.tar.gz \
+    && rm -rf ./protobuf-3.6.1 \
+    && export CC="clang-6.0" \
+    && export CXX="clang++-6.0" \
+    && export LDXX="clang++-6.0 -stdlib=libc++" \
+    && export LD="clang-6.0" \
+    && git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc \
+    && cd grpc \
+    && git submodule update --init \
+    && make \
+    && make install \
+    && cd .. \
+    && rm -rf ./grpc
