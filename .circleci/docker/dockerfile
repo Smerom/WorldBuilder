@@ -1,5 +1,5 @@
 # VERS: 0.0.1
-FROM debian:9 as installer
+FROM debian:9
 RUN apt-get update \
     && apt-get install -y wget gnupg \
     && wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add - \
@@ -28,30 +28,13 @@ RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.
     && make check \
     && make install \
     && ldconfig \
+    && cd .. \
+    && rm -rf protobuf-cpp-3.6.1.tar.gz
+    && rm -rf ./protobuf-3.6.1
     && git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc \
     && cd grpc \
     && git submodule update --init \
     && make \
     && make install
-
-
-FROM debian:9
-RUN apt-get update \
-    && apt-get install -y wget gnupg \
-    && wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add - \
-    && apt-get install -y software-properties-common \
-    && apt-add-repository "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-6.0 main" \
-    && apt-get update \
-    && apt-get install -y \
-    bash \
-    ssh \
-    ca-certificates \
-    git \
-    make \
-    build-essential \
-    clang-6.0 \
-    lldb-6.0 \
-    lld-6.0
-WORKDIR /
-COPY --from=installer /usr/local/lib/libprotobuf* /usr/local/lib
-COPY --from=installer /usr/local/lib/libgrpc* /usr/local/lib
+    && cd ..
+    && rm -rf ./grpc
