@@ -13,7 +13,10 @@ RUN apt-get update && apt-get install -y \
     g++ \
     unzip \
     build-essential \
-    pkg-config
+    pkg-config \
+    clang-6.0 \
+    lldb-6.0 \
+    lld-6.0
 RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz \
     && tar -xzf protobuf-cpp-3.6.1.tar.gz --no-same-owner \
     && cd protobuf-3.6.1 \
@@ -26,4 +29,6 @@ RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.
     && cd grpc \
     && git submodule update --init \
     && make \
-    && make install 
+    && make install
+
+CMD [ "/bin/bash" ]
