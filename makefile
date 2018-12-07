@@ -24,6 +24,9 @@ $(API_OBJ_DIR)/%.o: $(API_SRC_DIR)/%.cc
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CPPFLAGS) -c $^ -o $@
 
+protoc:
+	protoc --cpp_out=src/api -Isrc/proto src/proto/Basic.proto
+	protoc --grpc_out=src/api -Isrc/proto src/proto/Basic.proto
 
 clean:
 	rm obj/api/*

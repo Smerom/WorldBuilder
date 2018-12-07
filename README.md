@@ -1,6 +1,5 @@
-[![Build Status](https://travis-ci.org/Smerom/WorldBuilder.svg?branch=master)](https://travis-ci.org/Smerom/WorldBuilder)
-
 # WorldBuilder
+Master status: [![CircleCI](https://circleci.com/gh/Smerom/WorldBuilder/tree/master.svg?style=svg)](https://circleci.com/gh/Smerom/WorldBuilder/tree/master)
 Artistic planet generator with a strong foundation in science.
 
 ## Examples
