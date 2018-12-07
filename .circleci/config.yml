@@ -9,14 +9,14 @@ jobs:
           version: 18.06.0-ce
       - restore_cache:
           keys:
-            - build-img-{{ checksum "".circleci/docker/dockerfile" }}
+            - build-img-{{ checksum ".circleci/docker/dockerfile" }}
       - run:
           name: Check for build
           command: |
             if [[ ! -f .circleci/imgbuilt ]]; then
               echo 'export NEEDS_BUILD="true"' >> $BASH_ENV
             fi
-            
+
       - run:
           name: Install reqs
           command: |
