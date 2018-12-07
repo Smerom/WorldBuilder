@@ -21,8 +21,8 @@ jobs:
           name: Install reqs
           command: |
             if [[ ${NEEDS_BUILD} = "true" ]]; then
-              apt-get update
-              apt-get install curl unzip -y
+              sudo apt-get update
+              sudo apt-get install curl unzip -y
             fi
       - run:
           name: Install Docker client
