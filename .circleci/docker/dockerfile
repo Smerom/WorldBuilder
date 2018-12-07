@@ -1,7 +1,7 @@
 # VERS: 0.0.1
 FROM debian:9
 
-RUN apt-add-repository "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-6.0 main" \
+RUN apt-get install -y software-properties-common && apt-add-repository "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-6.0 main" \
     && apt-get update && apt-get install -y \
     ssh \
     ca-certificates \
