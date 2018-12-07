@@ -1,6 +1,6 @@
-# WorldBuilder
+[![CircleCI](https://circleci.com/gh/Smerom/WorldBuilder/tree/master.svg?style=svg)](https://circleci.com/gh/Smerom/WorldBuilder/tree/master)
 
-Master branch status: [![CircleCI](https://circleci.com/gh/Smerom/WorldBuilder/tree/master.svg?style=svg)](https://circleci.com/gh/Smerom/WorldBuilder/tree/master)
+# WorldBuilder
 
 Artistic planet generator with a strong foundation in science.
 
