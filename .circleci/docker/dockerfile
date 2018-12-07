@@ -2,6 +2,8 @@
 FROM debian:8
 
 RUN apt-get update && apt-get install -y \
+    ssh \
+    ca-certificates \
     git \
     autoconf \
     automake \

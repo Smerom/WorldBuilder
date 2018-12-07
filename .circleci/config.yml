@@ -4,6 +4,9 @@ jobs:
     docker:
       - image: debian:jessie
     steps:
+      - run:
+          name: install cci reqs
+          command: apt-get update && apt-get install -y git ssh tar gzip ca-certificates
       - checkout
       - setup_remote_docker:
           version: 18.06.0-ce
