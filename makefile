@@ -1,7 +1,7 @@
 CXX = clang++-6.0
 CPPFLAGS = -x c++ -Wall -Wextra -g -march=native -std=c++14 -stdlib=libc++ -O3 -I/usr/local/include -I./src
 
-LDFLAGS = -L/usr/local/Cellar/grpc/1.0.1/lib -L/usr/local/Cellar/google-protobuf/3.0.2/lib -lgrpc++ -lprotobuf.10 -stdlib=libc++
+LDFLAGS = -L/usr/local/lib -lgrpc++ -lprotobuf -stdlib=libc++
 
 API_SRC_DIR = ./src/api
 API_OBJ_DIR = ./obj/api
