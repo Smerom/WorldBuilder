@@ -13,7 +13,6 @@ RUN apt-get update \
     libtool \
     curl \
     make \
-    g++ \
     unzip \
     build-essential \
     pkg-config \
@@ -24,6 +23,9 @@ RUN apt-get update \
 RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.tar.gz \
     && tar -xzf protobuf-cpp-3.6.1.tar.gz --no-same-owner \
     && cd protobuf-3.6.1 \
+    && export CXX='clang++-6.0' \
+    && export CXXFLAGS="-std=c++14 -stdlib=libc++" \
+    && export LDFLAGS="-stdlib=libc++ -lc++ -lc++abi" \
     && ./configure \
     && make \
     && make check \
