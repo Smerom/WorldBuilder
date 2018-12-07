@@ -33,6 +33,3 @@ setup:
 	[[ -d obj ]] || mkdir obj
 	[[ -d obj/api ]] || mkdir obj/api
 	[[ -d obj/WorldGenerator ]] || mkdir obj/WorldGenerator
-
-$(shell mkdir -p obj/api)
-$(shell mkdir -p obj/WorldGenerator)

@@ -24,16 +24,7 @@ jobs:
               sudo apt-get update
               sudo apt-get install curl unzip -y
             fi
-      # - run:
-      #     name: Install Docker client
-      #     command: |
-      #       if [[ ${NEEDS_BUILD} = "true" ]]; then
-      #         set -x
-      #         VER="18.06.0-ce"
-      #         curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
-      #         tar -xz -C /tmp -f /tmp/docker-$VER.tgz
-      #         mv /tmp/docker/* /usr/bin
-      #       fi
+
       - run:
           name: Build image
           command: |
@@ -60,6 +51,7 @@ jobs:
       - run:
           name: Build
           command: |
+            make
             make debug
 
 workflows:
