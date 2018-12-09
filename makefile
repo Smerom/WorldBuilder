@@ -33,6 +33,7 @@ clean:
 	rm obj/WorldGenerator/*
 
 setup:
-	[[ -d obj ]] || mkdir obj
-	[[ -d obj/api ]] || mkdir obj/api
-	[[ -d obj/WorldGenerator ]] || mkdir obj/WorldGenerator
+	$(shell [[ -d api ]] || mkdir api)
+	$(shell [[ -d obj ]] || mkdir obj)
+	$(shell [[ -d obj/api ]] || mkdir obj/api)
+	$(shell [[ -d obj/WorldGenerator ]] || mkdir obj/WorldGenerator)
