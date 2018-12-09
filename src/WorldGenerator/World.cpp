@@ -69,32 +69,32 @@ namespace WorldBuilder {
 
         
         // movement phase
-//        RockColumn initial, final;
-//        initial = this->netRock();
+        RockColumn initial, final;
+        initial = this->netRock();
         updateTask.movement.start();
         this->columnMovementPhase(timestep);
         updateTask.movement.end();
-//        final = this->netRock();
-//        std::cout << "Rock change after movement:" << std::endl;
-//        logColumnChange(initial, final, false, false);
-//        initial = final;
+        final = this->netRock();
+        std::cout << "Rock change after movement:" << std::endl;
+        logColumnChange(initial, final, false, false);
+        initial = final;
         
         // transistion phase
         updateTask.transition.start();
         this->transitionPhase(timestep);
         updateTask.transition.end();
-//        final = this->netRock();
-//        std::cout << "Rock change after transition:" << std::endl;
-//        logColumnChange(initial, final, false, false);
-//        initial = final;
+        final = this->netRock();
+        std::cout << "Rock change after transition:" << std::endl;
+        logColumnChange(initial, final, false, false);
+        initial = final;
         
         // modification phase
         updateTask.modification.start();
         this->columnModificationPhase(timestep);
         updateTask.modification.end();
-//        final = this->netRock();
-//        std::cout << "Rock change after modification:" << std::endl;
-//        logColumnChange(initial, final, false, false);
+        final = this->netRock();
+        std::cout << "Rock change after modification:" << std::endl;
+        logColumnChange(initial, final, false, false);
         
         return updateTask;
     }
