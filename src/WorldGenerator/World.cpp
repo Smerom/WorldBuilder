@@ -175,7 +175,7 @@ namespace WorldBuilder {
     // top level modification phase
     void World::columnModificationPhase(wb_float timestep){
         
-        this->processAllHotspots(timestep);
+        //this->processAllHotspots(timestep);
         
         // thermal first
         //RockColumn initial, final;
