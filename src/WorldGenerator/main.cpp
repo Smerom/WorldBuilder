@@ -74,8 +74,8 @@ public:
         WorldBuilder::SimulationRunner runner(new WorldBuilder::BombardmentGenerator(randomSource), new WorldBuilder::World(grid, randomSource));
         runner.set_runTimesteps(5);
         runner.set_runMinTimestep(0.05);
-        runner.shouldLogRunTiming = true;
-        runner.shouldLogRockDelta = false;
+        runner.shouldLogRunTiming = false;
+        runner.shouldLogRockDelta = true;
         
         bool open = true;
         while (open) {
