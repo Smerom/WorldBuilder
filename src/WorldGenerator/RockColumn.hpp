@@ -10,6 +10,7 @@
 
 #include "Defines.h"
 #include <cmath>
+#include <iostream>
 
 namespace WorldBuilder {
     
