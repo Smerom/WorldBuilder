@@ -113,6 +113,7 @@ namespace WorldBuilder {
         std::vector<std::shared_ptr<PlateCell>> riftPlate(std::shared_ptr<Plate> plate);
         
         void homeostasis(wb_float timestep);
+        void updateSealevel();
         void updateTempurature();
         void updatePrecipitation();
         void supercontinentCycle();

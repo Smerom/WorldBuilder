@@ -25,6 +25,7 @@ namespace WorldBuilder {
     struct WorldAttributes {
         wb_float mantleDensity;
         wb_float radius;
+        wb_float totalSeaDepth;
         wb_float sealevel;
         wb_float waterDensity;
     };

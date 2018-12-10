@@ -9,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <thread>
+#include <algorithm>
 
 namespace WorldBuilder {
     
@@ -166,6 +167,9 @@ namespace WorldBuilder {
         
         // float it!
         this->homeostasis(timestep);
+
+        // update sealevel!
+        this->updateSealevel();
         
         // update attributes for cells
         this->updatePrecipitation();
@@ -554,6 +558,53 @@ namespace WorldBuilder {
             std::shared_ptr<Plate> plate = plateIt->second;
             plate->homeostasis(this->attributes, timestep);
         }
+    }
+
+    void World::updateSealevel() {
+        std::vector<std::shared_ptr<PlateCell>> cells;
+        // compute size
+        unsigned long size = 0;
+        for (auto&& plateIt : this->plates) {
+            auto plate = plateIt.second;
+            size += plate->cells.size;
+        }
+        cells.reserve(size);
+
+        // add cells to vector
+        for (auto&& plateIt : this->plates) {
+            auto plate = plateIt.second;
+            for (auto&& cellIt : plate->cells) {
+                cells.push_back(cellIt.second);
+            }
+        }
+
+        // sort the thing
+        std::sort(cells.begin(), cells.end(), 
+            [](const std::shared_ptr<PlateCell> a, const std::shared_ptr<PlateCell> b) -> bool
+        {
+            return a->get_elevation() < b->get_elevation();
+        });
+
+        // loop through until we've used up all the water
+        wb_float currentWater = 0;
+        wb_float currentElevation = cells[0]->get_elevation();
+        unsigned long seaCells = 0;
+        for (auto&& cell : cells) {
+            wb_float nextElevation = cell->get_elevation();
+            wb_float nextWater = currentWater + (seaCells * (nextElevation - currentElevation));
+            if (nextWater > this->attributes.totalSeaDepth) {
+                // compute exact level
+                wb_float remainingDepth = this->attributes.totalSeaDepth - currentWater;
+                currentElevation = remainingDepth / seaCells;
+                break;
+            }
+            currentWater = nextWater;
+            seaCells++;
+        }
+
+        // set the sea level
+        this->attributes.sealevel = currentElevation;
+
     }
     
     void World::updateTempurature() {
@@ -1518,7 +1569,9 @@ namespace WorldBuilder {
         // set attributes
         this->attributes.mantleDensity = 3400;
         this->attributes.radius = 6367;
-        this->attributes.sealevel = 9620;
+        this->attributes.totalSeaDepth = wb_float(theWorldGrid->verts_size) * 2510;
+        // TODO, calculate on initial run
+        this->attributes.sealevel = 9620; // very rough start, dynamic after first run?
         this->attributes.waterDensity = 1026;
         
         // null transfer

@@ -34,6 +34,7 @@ namespace WorldBuilder {
         }
         void set_thickness(wb_float newThickness){
             if (!std::isfinite(newThickness) || newThickness < 0) {
+                std::cout << "Thicnkess of: " << newThickness;
                 throw std::invalid_argument("Invalid Thickness, must be >=0 and finite");
             }
             thickness = newThickness;

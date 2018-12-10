@@ -150,7 +150,7 @@ namespace WorldBuilder {
                 result.result = Collision;
                 result.collisionBasin = nextNode->get_basin();
                 if (result.collisionBasin == this) {
-                    throw std::logic_error("bad");
+                    throw std::logic_error("Next basin returned self");
                 }
             } else {
                 nextNode->set_basin(this);
