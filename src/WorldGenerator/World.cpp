@@ -566,7 +566,7 @@ namespace WorldBuilder {
         unsigned long size = 0;
         for (auto&& plateIt : this->plates) {
             auto plate = plateIt.second;
-            size += plate->cells.size;
+            size += plate->cells.size();
         }
         cells.reserve(size);
 
