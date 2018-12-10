@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package api;
 
+option go_package = "github.com/Smerom/SimulationHandler/simapi/api";
+
 message GridVertex {
     // Winged Edge Data
     uint32 index = 1;
@@ -26,6 +28,7 @@ message SimulationInfo {
     double age = 7;
     repeated float tempurature = 8;
     repeated float precipitation = 9;
+    float sealevel = 10;
 }
 
 service WorldBuilder {

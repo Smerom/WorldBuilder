@@ -160,6 +160,7 @@ public:
             //std::cout << "Rendering took " << renderDuration.count() << " seconds." << std::endl;
             
             info.set_age(runner.get_world()->get_age());
+            info.set_sealevel(runner.get_world()->get_attributes().sealevel);
             open = stream->Write(info);
             
             //open = false; // only one to capture starting state

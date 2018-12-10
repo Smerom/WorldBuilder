@@ -68,6 +68,8 @@ namespace WorldBuilder {
         
         this->age = this->age + timestep;
 
+        std::cout << "Advancing by: " << timestep << " to age: " << this->age << std::endl; 
+
         
         // movement phase
         RockColumn initial, final;
@@ -169,7 +171,7 @@ namespace WorldBuilder {
         this->homeostasis(timestep);
 
         // update sealevel!
-        this->updateSealevel();
+        //this->updateSealevel();
         
         // update attributes for cells
         this->updatePrecipitation();
