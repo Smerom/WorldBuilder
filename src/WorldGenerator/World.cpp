@@ -171,7 +171,7 @@ namespace WorldBuilder {
         this->homeostasis(timestep);
 
         // update sealevel!
-        //this->updateSealevel();
+        this->updateSealevel();
         
         // update attributes for cells
         this->updatePrecipitation();
