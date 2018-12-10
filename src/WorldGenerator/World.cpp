@@ -1569,7 +1569,7 @@ namespace WorldBuilder {
         // set attributes
         this->attributes.mantleDensity = 3400;
         this->attributes.radius = 6367;
-        this->attributes.totalSeaDepth = wb_float(theWorldGrid->verts_size) * 2510;
+        this->attributes.totalSeaDepth = wb_float(theWorldGrid->verts_size()) * 2510;
         // TODO, calculate on initial run
         this->attributes.sealevel = 9620; // very rough start, dynamic after first run?
         this->attributes.waterDensity = 1026;
