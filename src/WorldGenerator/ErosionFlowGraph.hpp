@@ -52,6 +52,7 @@ namespace WorldBuilder {
         
         std::vector<std::shared_ptr<FlowEdge>> outflowTargets;
         std::vector<std::shared_ptr<FlowEdge>> inflowTargets;
+        //std::vector<std::shared_ptr<MaterialFlowNode>> equalNodes;
         bool touched;
         
         wb_float offsetHeight;

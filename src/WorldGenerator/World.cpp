@@ -835,7 +835,7 @@ namespace WorldBuilder {
                 
                 // create sediement
                 wb_float activeElevation = cell->get_elevation();
-                wb_float elevationAboveSealevel = activeElevation - 9260;
+                wb_float elevationAboveSealevel = activeElevation - this->attributes.sealevel;
                 // move some stuff to lower elevation cells
                 wb_float erosionFactor = elevationAboveSealevel / (4000);
                 wb_float erosionHeight = 0;
@@ -846,7 +846,7 @@ namespace WorldBuilder {
                     if (erosionFactor > 0.5) {
                         erosionFactor = 0.5;
                     }
-                    erosionHeight = erosionFactor * timestep * (activeElevation - 9260);
+                    erosionHeight = erosionFactor * timestep * (activeElevation - this->attributes.sealevel);
                     RockSegment erodedSegment = cell->erodeThickness(erosionHeight);
                     cell->rock.sediment = combineSegments(cell->rock.sediment, erodedSegment);
                 }
