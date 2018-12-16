@@ -184,18 +184,18 @@ namespace WorldBuilder {
         this->processAllHotspots(timestep);
         
         // thermal first
-        RockColumn initial, final;
-        initial = this->netRock();
+        // RockColumn initial, final;
+        // initial = this->netRock();
         this->erodeThermalSmoothing(timestep);
-        final = this->netRock();
-        std::cout << " Change after thermal erosion: " << std::endl;
-        logColumnChange(initial, final, false, false);
+        // final = this->netRock();
+        // std::cout << " Change after thermal erosion: " << std::endl;
+        // logColumnChange(initial, final, false, false);
         
-        initial = final;
+        // initial = final;
         this->erodeSedimentTransport(timestep);
-        final = this->netRock();
-        std::cout << "Change after sediment transport: " << std::endl;
-        logColumnChange(initial, final, false, false);
+        // final = this->netRock();
+        // std::cout << "Change after sediment transport: " << std::endl;
+        // logColumnChange(initial, final, false, false);
     }
     
 /****************************** Transistion ******************************/
@@ -963,6 +963,7 @@ namespace WorldBuilder {
         // build from node heights
         std::vector<std::pair<MaterialFlowNode*, wb_float>> outflowCandidates;
         // find outflow only, inflow set from outflow nodes
+        size_t plateEdges = 0;
         for (auto&& plateIt : this->plates) {
             std::shared_ptr<Plate>& plate = plateIt.second;
             for (auto&& cellIt : plate->cells) {
@@ -1001,13 +1002,16 @@ namespace WorldBuilder {
                             if (neighborIt != neighborPlate->cells.end()) {
                                 std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                                 wb_float heightDifference = elevation - (neighborCell->flowNode->elevation());
-                                if (heightDifference > 0) {
+                                if (heightDifference > float_epsilon) {
+                                    plateEdges++;
                                     // downhill node found, take note
                                     outflowCandidates.push_back(std::make_pair(neighborCell->flowNode, heightDifference));
                                     if (heightDifference > largestHeightDifference) {
                                         largestHeightDifference = heightDifference;
                                     }
                                     hasOutflow = true;
+                                } else if (std::abs(heightDifference) <= float_epsilon) {
+                                    cell->flowNode->equalNodes.insert(neighborCell->flowNode);
                                 }
                             }
                         }
@@ -1108,6 +1112,10 @@ namespace WorldBuilder {
                 outflowCandidates.clear();
             } // end for each cell in plate
         } // end for each plate
+
+        // log number of edges crossing plate boundaries
+        std::cout << "Number of cross boundary edges: " << plateEdges << std::endl;
+
         return graph;
     }
     
