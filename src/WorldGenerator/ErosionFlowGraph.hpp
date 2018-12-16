@@ -49,7 +49,7 @@ namespace WorldBuilder {
         MaterialFlowBasin* basin;
     public:
         
-        MaterialFlowNode() : materialHeight(0), suspendedMaterialHeight(0), touched(false), offsetHeight(0), basin(nullptr){};
+        MaterialFlowNode() : materialHeight(0), suspendedMaterialHeight(0), basin(nullptr), touched(false), offsetHeight(0){};
         
         std::vector<std::shared_ptr<FlowEdge>> outflowTargets;
         std::vector<std::shared_ptr<FlowEdge>> inflowTargets;
