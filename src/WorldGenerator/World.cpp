@@ -975,13 +975,15 @@ namespace WorldBuilder {
                     if (neighborIt != plate->cells.end()) {
                         std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                         wb_float heightDifference = elevation - (neighborCell->flowNode->elevation());
-                        if (heightDifference > 0) {
+                        if (heightDifference > float_epsilon) {
                             // downhill node found, take note
                             outflowCandidates.push_back(std::make_pair(neighborCell->flowNode, heightDifference));
                             if (heightDifference > largestHeightDifference) {
                                 largestHeightDifference = heightDifference;
                             }
                             hasOutflow = true;
+                        } else if (std::abs(heightDifference) < float_epsilon) {
+                            cell->flowNode->equalNodes.insert(neighborCell->flowNode);
                         }
                     }
                 }

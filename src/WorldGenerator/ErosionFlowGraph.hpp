@@ -52,7 +52,7 @@ namespace WorldBuilder {
         
         std::vector<std::shared_ptr<FlowEdge>> outflowTargets;
         std::vector<std::shared_ptr<FlowEdge>> inflowTargets;
-        //std::vector<std::shared_ptr<MaterialFlowNode>> equalNodes;
+        std::unordered_set<MaterialFlowNode*> equalNodes;
         bool touched;
         
         wb_float offsetHeight;
@@ -166,12 +166,7 @@ namespace WorldBuilder {
                 this->upslopeCandidates.insert(upslopeNode);
             }
         }
-        void addNode(MaterialFlowNode* node) {
-            // remove from upslope if needed
-            this->upslopeCandidates.erase(node);
-            // add to nodes
-            this->nodes.insert(node);
-        }
+        void addNode(MaterialFlowNode* node);
     };
     
     // want smallest on top of queue

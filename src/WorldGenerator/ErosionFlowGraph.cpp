@@ -211,6 +211,29 @@ namespace WorldBuilder {
         this->remainingThickness += absorbedBasin->remainingThickness;
         absorbedBasin->remainingThickness = 0;
     }
+
+
+    void addEqualNodes(std::unordered_set<MaterialFlowNode*> equalNodes, MaterialFlowNode* testNode){
+        equalNodes.insert(testNode);
+        for (auto eqNode : testNode->equalNodes) {
+            if (equalNodes.find(eqNode) == equalNodes.end()){
+                addEqualNodes(equalNodes, eqNode);
+            }
+        }
+    };
+
+    void MaterialFlowBasin::addNode(MaterialFlowNode* node) {
+            std::unordered_set<MaterialFlowNode*> equalNodes;
+
+            addEqualNodes(equalNodes, node);
+
+            for (auto nNode : equalNodes) {
+                // remove from upslope if needed
+                this->upslopeCandidates.erase(nNode);
+                // add to nodes
+                this->nodes.insert(nNode);
+            }
+        }
     
     
     
