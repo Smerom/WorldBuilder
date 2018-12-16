@@ -241,7 +241,7 @@ namespace WorldBuilder {
                 }
             }
             for (auto edge : nNode->outflowTargets) {
-                if (edge->source->get_basin() != this) {
+                if (edge->destination->get_basin() != this) {
                     downhillNodes.insert(edge->source);
                 }
             }
