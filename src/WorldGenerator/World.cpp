@@ -590,7 +590,7 @@ namespace WorldBuilder {
         // loop through until we've used up all the water
         wb_float currentWater = 0;
         wb_float currentElevation = cells[0]->get_elevation();
-        std::cout << "Starting fill elevation: " << currentElevation << std::endl;
+        //std::cout << "Starting fill elevation: " << currentElevation << std::endl;
         unsigned long seaCells = 0;
         for (auto&& cell : cells) {
             wb_float nextElevation = cell->get_elevation();
@@ -606,11 +606,11 @@ namespace WorldBuilder {
             seaCells++;
         }
 
-        std::cout << "Ending fill elevation: " << currentElevation << std::endl;
+        //std::cout << "Ending fill elevation: " << currentElevation << std::endl;
 
         // set the sea level
         this->attributes.sealevel = currentElevation;
-        std::cout << "Current water: " << currentWater << " Total Water: " << this->attributes.totalSeaDepth << std::endl;
+        //std::cout << "Current water: " << currentWater << " Total Water: " << this->attributes.totalSeaDepth << std::endl;
     }
     
     void World::updateTempurature() {
