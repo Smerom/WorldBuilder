@@ -150,6 +150,7 @@ namespace WorldBuilder {
                 result.result = Collision;
                 result.collisionBasin = nextNode->get_basin();
                 if (result.collisionBasin == this) {
+                    std::cout << "Basin Size: " << this->nodes.size() << " Uphill count: " << this->upslopeCandidates.size() << std::endl;
                     throw std::logic_error("Next basin returned self");
                 }
             } 
@@ -242,7 +243,7 @@ namespace WorldBuilder {
             }
             for (auto edge : nNode->outflowTargets) {
                 if (edge->destination->get_basin() != this) {
-                    downhillNodes.insert(edge->source);
+                    downhillNodes.insert(edge->destination);
                 }
             }
         }

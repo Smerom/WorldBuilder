@@ -982,7 +982,7 @@ namespace WorldBuilder {
                                 largestHeightDifference = heightDifference;
                             }
                             hasOutflow = true;
-                        } else if (std::abs(heightDifference) < float_epsilon) {
+                        } else if (std::abs(heightDifference) <= float_epsilon) {
                             cell->flowNode->equalNodes.insert(neighborCell->flowNode);
                         }
                     }
