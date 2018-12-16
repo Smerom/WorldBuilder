@@ -181,21 +181,21 @@ namespace WorldBuilder {
     // top level modification phase
     void World::columnModificationPhase(wb_float timestep){
         
-        //this->processAllHotspots(timestep);
+        this->processAllHotspots(timestep);
         
         // thermal first
-        //RockColumn initial, final;
-        //initial = this->netRock();
+        RockColumn initial, final;
+        initial = this->netRock();
         this->erodeThermalSmoothing(timestep);
-        //final = this->netRock();
-//        std::cout << " Change after thermal erosion: " << std::endl;
-//        logColumnChange(initial, final, false, false);
+        final = this->netRock();
+        std::cout << " Change after thermal erosion: " << std::endl;
+        logColumnChange(initial, final, false, false);
         
-        //initial = final;
+        initial = final;
         this->erodeSedimentTransport(timestep);
-        //final = this->netRock();
-//        std::cout << "Change after sediment transport: " << std::endl;
-//        logColumnChange(initial, final, false, false);
+        final = this->netRock();
+        std::cout << "Change after sediment transport: " << std::endl;
+        logColumnChange(initial, final, false, false);
     }
     
 /****************************** Transistion ******************************/
@@ -1128,22 +1128,26 @@ namespace WorldBuilder {
         // create a hotspot if we don't have enough
         if (this->hotspots.size() < 10) {
             std::shared_ptr<VolcanicHotspot> theHotspot = std::make_shared<VolcanicHotspot>();
-            theHotspot->weight = 1;
+            theHotspot->weight = std::abs(this->randomSource->randomNormal(10, 4));
             theHotspot->worldLocation = this->randomSource->getRandomPointUnitSphere();
             
-            // update weights
-            for(auto&& hotspot : this->hotspots) {
-                hotspot->weight = hotspot->weight * this->hotspots.size() / (this->hotspots.size() + 1);
-            }
-            theHotspot->weight = theHotspot->weight / (this->hotspots.size() + 1);
-            
             this->hotspots.insert(theHotspot);
-        }
-        
-        
+
+            // update nomalized weights
+            wb_float totalWeight = 0;
+            for(auto&& hotspot : this->hotspots) {
+                totalWeight += hotspot->weight;
+            }
+            for(auto&& hotspot : this->hotspots) {
+                hotspot->normWeight = hotspot->weight / totalWeight;
+            }
+        }        
     }
     
     wb_float World::processHotspot(std::shared_ptr<VolcanicHotspot> hotspot, wb_float timestep) {
+
+        // TODO make sticky hotspot
+        // TODO, make configurable
         
         // find the relavent plate cell
         std::vector<std::shared_ptr<PlateCell>> validCells;
@@ -1175,8 +1179,7 @@ namespace WorldBuilder {
         wb_float usedThickness = 0;
         if (validCells.size() > 0) {
             // add the weighted thickness
-            // TODO add timestep dependence
-            wb_float usedThickness = this->availableHotspotThickness * hotspot->weight;
+            wb_float usedThickness = this->availableHotspotThickness * hotspot->normWeight;
             
             // add percent to each valid cell
             for(auto && cell : validCells) {
