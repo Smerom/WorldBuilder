@@ -72,10 +72,10 @@ public:
         // create the generator
         std::shared_ptr<WorldBuilder::Random> randomSource(new WorldBuilder::Random(seed));
         WorldBuilder::SimulationRunner runner(new WorldBuilder::BombardmentGenerator(randomSource), new WorldBuilder::World(grid, randomSource));
-        runner.set_runTimesteps(1);
+        runner.set_runTimesteps(10);
         runner.set_runMinTimestep(0.05);
         runner.shouldLogRunTiming = false;
-        runner.shouldLogRockDelta = true;
+        runner.shouldLogRockDelta = false;
         
         bool open = true;
         while (open) {
