@@ -233,6 +233,19 @@ namespace WorldBuilder {
             // add to nodes
             this->nodes.insert(nNode);
         }
+
+        for (auto nNode : equalNodes) {
+            for (auto edge : nNode->inflowTargets) {
+                if (edge->source->get_basin() != this) {
+                    uphillNodes.insert(edge->source);
+                }
+            }
+            for (auto edge : nNode->outflowTargets) {
+                if (edge->source->get_basin() != this) {
+                    downhillNodes.insert(edge->source);
+                }
+            }
+        }
     }
     
     
