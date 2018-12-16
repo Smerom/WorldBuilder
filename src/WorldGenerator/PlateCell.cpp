@@ -66,7 +66,7 @@ namespace WorldBuilder {
 //        }
         
 
-        this->baseOffset = -1 * this->rock.mass() / worldAttributes.mantleDensity;
+        this->baseOffset = -1 * (this->rock.mass() + waterMass) / worldAttributes.mantleDensity;
         
         // harden any sediment over 3k meters
         // TODO add timestep depencency
