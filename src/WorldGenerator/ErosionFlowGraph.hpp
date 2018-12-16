@@ -166,7 +166,14 @@ namespace WorldBuilder {
                 this->upslopeCandidates.insert(upslopeNode);
             }
         }
-        void addNode(MaterialFlowNode* node);
+
+        void addSingleNode(MaterialFlowNode* node) {
+            node->set_basin(this);
+            this->nodes.insert(node);
+        }
+
+        void addEqualNodes(std::unordered_set<MaterialFlowNode*> equalNodes, MaterialFlowNode* testNode);
+        void addNode(std::unordered_set<MaterialFlowNode*> uphillNodes, std::unordered_set<MaterialFlowNode*> downhillNodes, MaterialFlowNode* node);
     };
     
     // want smallest on top of queue
