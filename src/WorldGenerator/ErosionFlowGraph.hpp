@@ -178,8 +178,9 @@ namespace WorldBuilder {
         }
 
         void addSingleNode(MaterialFlowNode* node) {
-            std::cout << "Logging add single" << std::endl;
-            node->log();
+            // std::cout << "Logging add single" << std::endl;
+            // node->log();
+            this->upslopeCandidates.erase(node);
             node->set_basin(this);
             this->nodes.insert(node);
         }

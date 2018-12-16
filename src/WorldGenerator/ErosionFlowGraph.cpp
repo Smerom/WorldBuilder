@@ -150,6 +150,11 @@ namespace WorldBuilder {
                 result.result = Collision;
                 result.collisionBasin = nextNode->get_basin();
                 if (result.collisionBasin == this) {
+
+                    std::cout << std::endl;
+                    std::cout << std::endl;
+                    std::cout << "EXEPTION!!!" << std::endl;
+                    std::cout << std::endl;
                     std::cout << "Basin Size: " << this->nodes.size() << " Uphill count: " << this->upslopeCandidates.size() << std::endl;
                     std::cout << "Logging nodes:" << std::endl;
                     for(auto node : this->nodes){
