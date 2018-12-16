@@ -606,7 +606,7 @@ namespace WorldBuilder {
 
         // set the sea level
         this->attributes.sealevel = currentElevation;
-
+        std::cout << "Current water: " << currentWater << " Total Water: " << this->attributes.totalSeaDepth << std::endl;
     }
     
     void World::updateTempurature() {

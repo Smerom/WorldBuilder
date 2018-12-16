@@ -177,6 +177,8 @@ namespace WorldBuilder {
             }
         }
 
+        // adds a single node, and removes from upslope if present.
+        // ignores equal nodes
         void addSingleNode(MaterialFlowNode* node) {
             // std::cout << "Logging add single" << std::endl;
             // node->log();
