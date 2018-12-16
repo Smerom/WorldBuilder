@@ -964,6 +964,7 @@ namespace WorldBuilder {
         std::vector<std::pair<MaterialFlowNode*, wb_float>> outflowCandidates;
         // find outflow only, inflow set from outflow nodes
         size_t plateEdges = 0;
+        size_t edgeCellCount = 0;
         for (auto&& plateIt : this->plates) {
             std::shared_ptr<Plate>& plate = plateIt.second;
             for (auto&& cellIt : plate->cells) {
@@ -993,6 +994,7 @@ namespace WorldBuilder {
                     }
                 }
                 if (cell->edgeInfo != nullptr) {
+                    edgeCellCount++;
                     // we are an edge, check other plate neighbors
                     for (auto neighborIndexIt = cell->edgeInfo->otherPlateNeighbors.begin(); neighborIndexIt != cell->edgeInfo->otherPlateNeighbors.end(); neighborIndexIt++) {
                         auto neighborPlateIt = this->plates.find(neighborIndexIt->second.plateIndex);
@@ -1115,6 +1117,7 @@ namespace WorldBuilder {
 
         // log number of edges crossing plate boundaries
         std::cout << "Number of cross boundary edges: " << plateEdges << std::endl;
+        std::cout << "Number of boundary cells: " << edgeCellCount << std::endl;
 
         return graph;
     }
