@@ -101,6 +101,15 @@ namespace WorldBuilder {
         wb_float elevation() const{
             return materialHeight + offsetHeight + suspendedMaterialHeight; // include suspended material in elevation as it is effectively part of the cell when not flowing the graph
         }
+
+        void log() const {
+            std::cout << "Logging Node: " << std::endl;
+            std::cout << "Basin: " << this->basin << std::endl;
+            std::cout << "Inflow count: " << this->inflowTargets.size() << std::endl;
+            std::cout << "Outflow count: " << this->outflowTargets.size() << std::endl;
+            std::cout << "Equal count: " << this->equalNodes.size() << std::endl;
+            std::cout << "Elevation: " << this->elevation() << std::endl;
+        }
         
         bool checkWeight() const;
         

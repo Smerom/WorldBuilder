@@ -151,6 +151,15 @@ namespace WorldBuilder {
                 result.collisionBasin = nextNode->get_basin();
                 if (result.collisionBasin == this) {
                     std::cout << "Basin Size: " << this->nodes.size() << " Uphill count: " << this->upslopeCandidates.size() << std::endl;
+                    std::cout << "Logging nodes:" << std::endl;
+                    for(auto node : this->nodes){
+                        node->log();
+                    }
+                    std::cout << "Logging upslope nodes:" << std::endl;
+                    for(auto node : this->upslopeCandidates){
+                        node->log();
+                    }
+
                     throw std::logic_error("Next basin returned self");
                 }
             } 
