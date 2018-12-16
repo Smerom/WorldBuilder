@@ -1148,31 +1148,48 @@ namespace WorldBuilder {
     
     wb_float World::processHotspot(std::shared_ptr<VolcanicHotspot> hotspot, wb_float timestep) {
 
-        // TODO make sticky hotspot
+        // make sticky hotspot
         // TODO, make configurable
+        bool validOutflow = false;
+        std::vector<std::shared_ptr<PlateCell>> validCells;
+        if (auto plate = hotspot->lastPlate.lock()) { 
+            if (auto cell = hotspot->lastCell.lock()) {
+                Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
+                wb_float dist = math::distanceBetween3Points(locationInLocal, plate->center) * this->attributes.radius;
+                // make config! (in km)
+                if (dist < 150){
+                    validOutflow = true;
+                    validCells.push_back(cell);
+                }
+            }
+        }
         
         // find the relavent plate cell
-        std::vector<std::shared_ptr<PlateCell>> validCells;
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate> plate = plateIt->second;
-            
-            // check if we can interact
-            Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
-            wb_float testAngle = math::angleBetweenUnitVectors(locationInLocal, plate->center);
-            if (plate->maxEdgeAngle == 0 || testAngle < plate->maxEdgeAngle || std::isnan(testAngle)) {
-                uint32_t hint = 0;
-                // get our last closest cell index for this plate
-                if (hotspot->closestPlateCellIndex.find(plate->id) != hotspot->closestPlateCellIndex.end()) {
-                    hint = hotspot->closestPlateCellIndex.find(plate->id)->second;
-                }
-                uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
-                // update neareset
-                hotspot->closestPlateCellIndex[plate->id] = nearestIndex;
+        if (!validOutflow) {
+            for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
+                std::shared_ptr<Plate> plate = plateIt->second;
                 
-                // check if in plate
-                auto nearestIt = plate->cells.find(nearestIndex);
-                if (nearestIt != plate->cells.end()) {
-                    validCells.push_back(nearestIt->second);
+                // check if we can interact
+                Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
+                wb_float testAngle = math::angleBetweenUnitVectors(locationInLocal, plate->center);
+                if (plate->maxEdgeAngle == 0 || testAngle < plate->maxEdgeAngle || std::isnan(testAngle)) {
+                    uint32_t hint = 0;
+                    // get our last closest cell index for this plate
+                    if (hotspot->closestPlateCellIndex.find(plate->id) != hotspot->closestPlateCellIndex.end()) {
+                        hint = hotspot->closestPlateCellIndex.find(plate->id)->second;
+                    }
+                    uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
+                    // update neareset
+                    hotspot->closestPlateCellIndex[plate->id] = nearestIndex;
+                    
+                    // check if in plate
+                    auto nearestIt = plate->cells.find(nearestIndex);
+                    if (nearestIt != plate->cells.end()) {
+                        validCells.push_back(nearestIt->second);
+                        // TODO, make less hacky in setting last values for hotspot
+                        hotspot->lastPlate = plate;
+                        hotspot->lastCell = nearestIt->second;
+                    }
                 }
             }
         }
