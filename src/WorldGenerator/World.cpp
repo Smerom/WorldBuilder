@@ -16,11 +16,14 @@ namespace WorldBuilder {
     // per million years
     wb_float erosionRate(wb_float elevationAboveSealevel) {
         if (elevationAboveSealevel < 1000) {
-            return 0.075;
-        } else if (elevationAboveSealevel < 4000) {
             return 0.15;
+            //return 0.075;
+        } else if (elevationAboveSealevel < 4000) {
+            return 0.3;
+            //return 0.15;
         } else {
-            return 0.30;
+            return 0.6;
+            //return 0.30;
         }
     }
     
@@ -996,11 +999,11 @@ namespace WorldBuilder {
                 if (cell->edgeInfo != nullptr) {
                     edgeCellCount++;
                     // we are an edge, check other plate neighbors
-                    for (auto neighborIndexIt = cell->edgeInfo->otherPlateNeighbors.begin(); neighborIndexIt != cell->edgeInfo->otherPlateNeighbors.end(); neighborIndexIt++) {
-                        auto neighborPlateIt = this->plates.find(neighborIndexIt->second.plateIndex);
+                    for (auto&& neighborIndexIt : cell->edgeInfo->otherPlateNeighbors) {
+                        auto neighborPlateIt = this->plates.find(neighborIndexIt.second.plateIndex);
                         if (neighborPlateIt != this->plates.end()){
                             std::shared_ptr<Plate>& neighborPlate = neighborPlateIt->second;
-                            auto neighborIt = neighborPlate->cells.find(neighborIndexIt->second.cellIndex);
+                            auto neighborIt = neighborPlate->cells.find(neighborIndexIt.second.cellIndex);
                             if (neighborIt != neighborPlate->cells.end()) {
                                 std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                                 wb_float heightDifference = elevation - (neighborCell->flowNode->elevation());
@@ -1116,8 +1119,8 @@ namespace WorldBuilder {
         } // end for each plate
 
         // log number of edges crossing plate boundaries
-        std::cout << "Number of cross boundary edges: " << plateEdges << std::endl;
-        std::cout << "Number of boundary cells: " << edgeCellCount << std::endl;
+        //std::cout << "Number of cross boundary edges: " << plateEdges << std::endl;
+        //std::cout << "Number of boundary cells: " << edgeCellCount << std::endl;
 
         return graph;
     }

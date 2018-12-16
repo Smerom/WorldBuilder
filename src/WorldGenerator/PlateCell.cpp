@@ -19,6 +19,12 @@ namespace WorldBuilder {
     }
     
     void PlateCell::homeostasis(const WorldAttributes worldAttributes, wb_float timestep){
+        // current water overhead, before modification
+        wb_float waterMass = 0;
+        if (this->get_elevation() < worldAttributes.sealevel) {
+            waterMass = (worldAttributes.sealevel - this->get_elevation()) * 1000;
+        }
+
         this->age += timestep; // certain effects depend on cell age
         
         // crush any continental or oceanic crust above max thickness
@@ -59,7 +65,7 @@ namespace WorldBuilder {
 //            this->rock.oceanic.set_thickness(oceanicMass / this->rock.oceanic.get_density());
 //        }
         
-        
+
         this->baseOffset = -1 * this->rock.mass() / worldAttributes.mantleDensity;
         
         // harden any sediment over 3k meters
