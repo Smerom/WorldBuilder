@@ -601,6 +601,7 @@ namespace WorldBuilder {
                 currentElevation = remainingDepth / seaCells;
                 break;
             }
+            currentElevation = nextElevation;
             currentWater = nextWater;
             seaCells++;
         }
