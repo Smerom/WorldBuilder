@@ -16,14 +16,11 @@ namespace WorldBuilder {
     // per million years
     wb_float erosionRate(wb_float elevationAboveSealevel) {
         if (elevationAboveSealevel < 1000) {
-            return 0.15;
-            //return 0.075;
+            return 0.075;
         } else if (elevationAboveSealevel < 4000) {
-            return 0.3;
-            //return 0.15;
+            return 0.15;
         } else {
-            return 0.6;
-            //return 0.30;
+            return 0.30;
         }
     }
     
