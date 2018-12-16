@@ -14,6 +14,7 @@
 #include <unordered_set>
 #include <set>
 #include <queue>
+#include <iostream>
 
 namespace WorldBuilder {
     class FlowEdge;
