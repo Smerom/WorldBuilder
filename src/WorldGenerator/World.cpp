@@ -598,7 +598,7 @@ namespace WorldBuilder {
             if (nextWater > this->attributes.totalSeaDepth) {
                 // compute exact level
                 wb_float remainingDepth = this->attributes.totalSeaDepth - currentWater;
-                currentElevation = remainingDepth / seaCells;
+                currentElevation = currentElevation + remainingDepth / seaCells;
                 break;
             }
             currentElevation = nextElevation;
