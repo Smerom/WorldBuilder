@@ -184,8 +184,8 @@ namespace WorldBuilder {
             this->nodes.insert(node);
         }
 
-        void addEqualNodes(std::unordered_set<MaterialFlowNode*> equalNodes, MaterialFlowNode* testNode);
-        void addNode(std::unordered_set<MaterialFlowNode*> uphillNodes, std::unordered_set<MaterialFlowNode*> downhillNodes, MaterialFlowNode* node);
+        void addEqualNodes(std::unordered_set<MaterialFlowNode*> &equalNodes, MaterialFlowNode* testNode);
+        void addNode(std::unordered_set<MaterialFlowNode*> &uphillNodes, std::unordered_set<MaterialFlowNode*> &downhillNodes, MaterialFlowNode* node);
     };
     
     // want smallest on top of queue

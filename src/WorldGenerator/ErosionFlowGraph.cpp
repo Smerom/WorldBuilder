@@ -222,8 +222,7 @@ namespace WorldBuilder {
     }
 
 
-    void MaterialFlowBasin::addEqualNodes(std::unordered_set<MaterialFlowNode*> equalNodes, MaterialFlowNode* testNode){
-        testNode->set_basin(this);
+    void MaterialFlowBasin::addEqualNodes(std::unordered_set<MaterialFlowNode*> &equalNodes, MaterialFlowNode* testNode){
         equalNodes.insert(testNode);
         for (auto eqNode : testNode->equalNodes) {
             if (equalNodes.find(eqNode) == equalNodes.end()){
@@ -232,13 +231,13 @@ namespace WorldBuilder {
         }
     };
 
-    void MaterialFlowBasin::addNode(std::unordered_set<MaterialFlowNode*> uphillNodes, std::unordered_set<MaterialFlowNode*> downhillNodes, MaterialFlowNode* node) {
+    void MaterialFlowBasin::addNode(std::unordered_set<MaterialFlowNode*> &uphillNodes, std::unordered_set<MaterialFlowNode*> &downhillNodes, MaterialFlowNode* node) {
         std::unordered_set<MaterialFlowNode*> equalNodes;
 
         this->addEqualNodes(equalNodes, node);
 
         for (auto nNode : equalNodes) {
-            //nNode->set_basin(this);
+            nNode->set_basin(this);
             // remove from upslope if needed
             this->upslopeCandidates.erase(nNode);
             // add to nodes
