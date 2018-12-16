@@ -28,6 +28,7 @@ namespace WorldBuilder {
         wb_float totalSeaDepth;
         wb_float sealevel;
         wb_float waterDensity;
+        wb_float cellArea; // km^2
     };
     
 /*************** World Step time tracking ***************/

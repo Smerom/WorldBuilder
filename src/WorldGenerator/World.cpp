@@ -1116,7 +1116,9 @@ namespace WorldBuilder {
         
         
         // add thickness (currently roughly bassed on hawaii seamount chain)
-        this->availableHotspotThickness += 8500*5*timestep * 10;
+        // at 8800 km^3 per million years on average
+        // hawaii volume km * years * target num of hotspots * convert to meters / area in km ^2
+        this->availableHotspotThickness += 8500*timestep * 10 * 1000 / this->attributes.cellArea;
         
         wb_float usedThickness = 0;
         for(auto&& hotspot : this->hotspots) {
@@ -1584,6 +1586,8 @@ namespace WorldBuilder {
         // TODO, calculate on initial run
         this->attributes.sealevel = 9620; // very rough start, dynamic after first run?
         this->attributes.waterDensity = 1026;
+
+        this->attributes.cellArea = 8 * math::piOverTwo * this->attributes.radius * this->attributes.radius / theWorldGrid->verts_size();
         
         // null transfer
         //this->momentumTransfer = nullptr;
