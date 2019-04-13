@@ -4,6 +4,14 @@ package api;
 
 option go_package = "github.com/Smerom/SimulationHandler/simapi/api";
 
+
+message SimulationRequest {
+    oneof request {
+        Grid grid = 1;
+        Initialization initialization = 2;
+    }
+}
+
 message GridVertex {
     // Winged Edge Data
     uint32 index = 1;
@@ -20,6 +28,11 @@ message Grid {
     repeated GridVertex vertices = 3;
 }
 
+message Initialization {
+
+    double waterDepth = 4; // linear volume (total height)
+}
+
 message SimulationInfo {
     repeated float elevations = 2;
     repeated float sediment = 4;
@@ -32,5 +45,5 @@ message SimulationInfo {
 }
 
 service WorldBuilder {
-    rpc GenerateWorld(stream Grid) returns (stream SimulationInfo) {};
+    rpc GenerateWorld(stream SimulationRequest) returns (stream SimulationInfo) {};
 }

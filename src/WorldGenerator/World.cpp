@@ -1602,7 +1602,7 @@ namespace WorldBuilder {
     }
     
     /*************** Constructors ***************/
-    World::World(Grid *theWorldGrid, std::shared_ptr<Random> random) : worldGrid(theWorldGrid), plates(10), randomSource(random), _nextPlateId(0), availableHotspotThickness(0){
+    World::World(Grid *theWorldGrid, std::shared_ptr<Random> random, WorldConfig config) : worldGrid(theWorldGrid), plates(10), randomSource(random), _nextPlateId(0), availableHotspotThickness(0){
         // set default rock column
         this->divergentOceanicColumn.root = RockSegment(84000.0, 3200.0);
         this->divergentOceanicColumn.oceanic = RockSegment(6000.0, 2890.0);
@@ -1610,7 +1610,7 @@ namespace WorldBuilder {
         // set attributes
         this->attributes.mantleDensity = 3400;
         this->attributes.radius = 6367;
-        this->attributes.totalSeaDepth = wb_float(theWorldGrid->verts_size()) * 2510;
+        this->attributes.totalSeaDepth = wb_float(theWorldGrid->verts_size()) * config.waterDepth; // average depth for Earth is 2510
         // TODO, calculate on initial run
         this->attributes.sealevel = 9620; // very rough start, dynamic after first run?
         this->attributes.waterDensity = 1026;
