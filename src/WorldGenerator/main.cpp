@@ -49,7 +49,7 @@ public:
         stream->Read(&request);
         if (!request.has_grid()) {
             std::cout << "Expected Grid" << std::endl;
-            return;
+            return Status::CANCELLED;
         }
 
         auto readGrid = request.grid();
@@ -66,7 +66,7 @@ public:
             stream->Read(&request);
             if (!request.has_grid()) {
                 std::cout << "Expected Grid" << std::endl;
-                return;
+                return Status::CANCELLED;
             }
             
             auto readGrid = request.grid();
@@ -81,7 +81,7 @@ public:
         stream->Read(&request);
         if (!request.has_initialization()){
             std::cout << "No initialization sent" << std::endl;
-            return;
+            return Status::CANCELLED;
         }
 
         auto init = request.initialization();
