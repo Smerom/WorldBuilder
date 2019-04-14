@@ -352,6 +352,9 @@ namespace WorldBuilder {
     
     // knits the edges of plates together so the edge cells can interact
     void World::knitPlates(std::shared_ptr<Plate> plate) {
+
+        // logging vars
+        uint32_t offEdgeCount, connections;
         
         for (auto&& plateIt : this->plates) {
             std::shared_ptr<Plate> testPlate = plateIt.second;
@@ -393,6 +396,8 @@ namespace WorldBuilder {
                                 edgeData.cellIndex = nearestGridIndex;
                                 edgeData.distance = neighborDistance;
                                 edgeCell->edgeInfo->otherPlateNeighbors[neighborKey] = edgeData; //neighborDistance;
+
+                                connections++;
                             }
                             
                             // loop over neighbors
@@ -410,6 +415,8 @@ namespace WorldBuilder {
                                     edgeData.cellIndex = index;
                                     edgeData.distance = neighborDistance;
                                     edgeCell->edgeInfo->otherPlateNeighbors[neighborKey] = edgeData;
+
+                                    connections++;
                                 }
                             }
                         }
@@ -417,6 +424,19 @@ namespace WorldBuilder {
                 }
             }
         }
+        // calculate off edge cells
+        for (auto&& edgeIt : plate->edgeCells) {
+            std::shared_ptr<PlateCell> edgeCell = edgeIt.second;
+            for (auto& neighborIt : this->worldGrid->get_vertices()[edgeCell->vertex->get_index()].get_neighbors()) {
+                auto testEdgeIt = plate->cells.find(neighborIt->get_index());
+                if (testEdgeIt == plate->cells.end()) {
+                    offEdgeCount++;
+                }
+            }
+        }
+
+        // print knit stats for plate
+        std::cout << "Missing edges: " << offEdgeCount << " with other plate connections: " << connections << std::endl;
     }
     
     // renormalize plates and transfer rock from cells that are too thin
