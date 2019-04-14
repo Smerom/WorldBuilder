@@ -352,6 +352,7 @@ namespace WorldBuilder {
     
     // knits the edges of plates together so the edge cells can interact
     void World::knitPlates(std::shared_ptr<Plate> plate) {
+        wb_float knitDistance = 1.5 * this->cellSmallAngle;
 
         // logging vars
         uint32_t offEdgeCount = 0;
@@ -402,15 +403,20 @@ namespace WorldBuilder {
                             }
                             
                             // loop over neighbors
-                            for (auto neighborIt = this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors().begin(); neighborIt != this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors().end(); neighborIt++)
+                            for (auto neighborIt : this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors(2))
                             {
-                                uint32_t index = (*neighborIt)->get_index();
+                                uint32_t index = neighborIt.second->get_index();
                                 testEdgeIt = testPlate->cells.find(index);
                                 if (testEdgeIt != testPlate->cells.end()) {
                                     std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
+                                    // check distance
+                                    wb_float neighborDistance = math::distanceBetween3Points(targetEdgeInTest, testEdge->get_vertex()->get_vector());
+                                    if (neighborDistance > knitDistance) {
+                                        continue;
+                                    }
+                                    // add edge
                                     uint64_t neighborKey;
                                     neighborKey = ((uint64_t)testPlate->id << 32) + index;
-                                    wb_float neighborDistance = math::distanceBetween3Points(targetEdgeInTest, testEdge->get_vertex()->get_vector());
                                     EdgeNeighbor edgeData;
                                     edgeData.plateIndex = testPlate->id;
                                     edgeData.cellIndex = index;
