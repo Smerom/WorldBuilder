@@ -354,7 +354,8 @@ namespace WorldBuilder {
     void World::knitPlates(std::shared_ptr<Plate> plate) {
 
         // logging vars
-        uint32_t offEdgeCount, connections;
+        uint32_t offEdgeCount = 0;
+        uint32_t connections = 0;
         
         for (auto&& plateIt : this->plates) {
             std::shared_ptr<Plate> testPlate = plateIt.second;
