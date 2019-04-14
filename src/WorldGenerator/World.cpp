@@ -387,8 +387,8 @@ namespace WorldBuilder {
                             edgeCell->edgeInfo->otherPlateLastNearest[testPlate->id] = nearestGridIndex;
                             
                             // check if it is an edge, and neighbors
-                            auto testEdgeIt = testPlate->cells.find(nearestGridIndex);
-                            if (testEdgeIt != testPlate->cells.end()) {
+                            auto testEdgeIt = testPlate->edgeCells.find(nearestGridIndex);
+                            if (testEdgeIt != testPlate->edgeCells.end()) {
                                 std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
                                 uint64_t neighborKey;
                                 neighborKey = ((uint64_t)testPlate->id << 32) + nearestGridIndex;
@@ -406,8 +406,8 @@ namespace WorldBuilder {
                             for (auto neighborIt : this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors(2))
                             {
                                 uint32_t index = neighborIt.second->get_index();
-                                testEdgeIt = testPlate->cells.find(index);
-                                if (testEdgeIt != testPlate->cells.end()) {
+                                testEdgeIt = testPlate->edgeCells.find(index);
+                                if (testEdgeIt != testPlate->edgeCells.end()) {
                                     std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
                                     // check distance
                                     wb_float neighborDistance = math::distanceBetween3Points(targetEdgeInTest, testEdge->get_vertex()->get_vector());
