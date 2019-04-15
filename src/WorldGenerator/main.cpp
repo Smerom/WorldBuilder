@@ -188,7 +188,7 @@ public:
             info.set_sealevel(runner.get_world()->get_attributes().sealevel);
             open = stream->Write(info);
             
-            open = false; // only one to capture starting state
+            //open = false; // only one to capture starting state
         }
         
         return Status::OK;
