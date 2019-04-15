@@ -63,10 +63,10 @@ namespace WorldBuilder {
     std::unordered_map<uint32_t, GridVertex *>& GridVertex::get_neighbors(uint32_t dist) const {
         // create 
         auto newNeighbors = std::make_shared<std::unordered_map<uint32_t, GridVertex*>>();
-        std::unordered_map<uint32_t, GridVertex*> neighbors;
+        std::unordered_map<uint32_t, GridVertex*> depthNeighbors;
         //neighbors.reserve(/*some count*/);
-        for (auto neigh : this->neighbors) {
-            neighbors.insert({neigh->index, neigh});
+        for (auto const neigh : this->neighbors) {
+            depthNeighbors.insert({neigh->index, neigh});
             newNeighbors->insert({neigh->index, neigh});
         }
 
@@ -85,7 +85,7 @@ namespace WorldBuilder {
         //     }
         // }
 
-        return neighbors;
+        return depthNeighbors;
     }
 
 }
