@@ -1,6 +1,7 @@
 SHELL = /bin/bash
 CXX = clang++-6.0
-CPPFLAGS = -x c++ -Wall -Wextra -Wno-unused-parameter -g -march=native -std=c++14 -stdlib=libc++ -O0 -I/usr/local/include -I./src $(shell pkg-config --cflags protobuf grpc)
+CPPFLAGS = -x c++ -Wall -Wextra -Wno-unused-parameter -g -march=native -std=c++14 -stdlib=libc++ -I/usr/local/include -I./src $(shell pkg-config --cflags protobuf grpc)
+OP=-O0
 
 LDFLAGS = -L/usr/local/lib -stdlib=libc++ -lc++ -g -lc++abi $(shell pkg-config --libs protobuf grpc++)
 
@@ -20,10 +21,10 @@ debug: $(API_OBJ_FILES) $(OBJ_FILES)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(API_OBJ_DIR)/%.o: $(API_SRC_DIR)/%.cc
-	$(CXX) $(CPPFLAGS) -c $^ -o $@ 
+	$(CXX) $(CPPFLAGS) $(OP) -c $^ -o $@ 
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CPPFLAGS) -c $^ -o $@
+	$(CXX) $(CPPFLAGS) $(OP) -c $^ -o $@
 
 protoc:
 	protoc --cpp_out=src/api -Isrc/proto src/proto/Basic.proto
