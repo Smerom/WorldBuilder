@@ -352,7 +352,7 @@ namespace WorldBuilder {
     
     // knits the edges of plates together so the edge cells can interact
     void World::knitPlates(std::shared_ptr<Plate> plate) {
-        wb_float knitDistance = 1.5 * this->cellSmallAngle;
+        wb_float knitDistance = 2.0 * this->cellSmallAngle;
 
         // logging vars
         uint32_t offEdgeCount = 0;
@@ -442,7 +442,7 @@ namespace WorldBuilder {
         }
 
         // print knit stats for plate
-        std::cout << "Missing edges: " << offEdgeCount << " with other plate connections: " << connections << " Difference " << int64_t(offEdgeCount) - int64_t(connections) << std::endl;
+        std::cout << "Missing edges: " << offEdgeCount << " with other plate connections: " << connections << " Fraction: " << wb_float(connections) / wb_float(offEdgeCount) << std::endl;
     }
     
     // renormalize plates and transfer rock from cells that are too thin
