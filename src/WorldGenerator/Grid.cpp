@@ -62,24 +62,24 @@ namespace WorldBuilder {
 
     const std::unordered_map<uint32_t, GridVertex *>& GridVertex::get_neighbors(uint32_t dist) const {
         // create 
+        auto newNeighbors = std::make_shared<std::unordered_map<uint32_t, GridVertex*>>();
         std::unordered_map<uint32_t, GridVertex*> neighbors;
-        std::unordered_map<uint32_t, GridVertex*> newNeighbors;
         //neighbors.reserve(/*some count*/);
         for (auto neigh : this->neighbors) {
             neighbors.insert({neigh->index, neigh});
-            newNeighbors.insert({neigh->index, neigh});
+            newNeighbors->insert({neigh->index, neigh});
         }
 
         for (uint32_t depth = 1; depth <= dist; depth++) {
             auto currentTest = newNeighbors;
-            newNeighbors.clear();
-            for (auto neighTestIt : currentTest) {
+            newNeighbors = std::make_unique<std::unordered_map<uint32_t, GridVertex*>>();
+            for (auto neighTestIt : *currentTest) {
                 auto neighTest = neighTestIt.second;
                 for (auto neigh : neighTest->neighbors) {
                     // check if in neighbors
                     if (neighbors.find(neigh->index) == neighbors.end()) {
                         neighbors.insert({neigh->index, neigh});
-                        newNeighbors.insert({neigh->index, neigh});
+                        newNeighbors->insert({neigh->index, neigh});
                     }
                 }
             }
