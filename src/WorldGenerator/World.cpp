@@ -403,7 +403,7 @@ namespace WorldBuilder {
                             }
                             
                             // loop over neighbors
-                            for (auto neighborIt : this->worldGrid->get_vertices()[nearestGridIndex].neighborsByDepth(2)) {
+                            for (auto neighborIt : this->worldGrid->get_vertices()[nearestGridIndex].neighborsByDepth(3)) {
                                 uint32_t index = neighborIt.second->get_index();
                                 testEdgeIt = testPlate->edgeCells.find(index);
                                 if (testEdgeIt != testPlate->edgeCells.end()) {
