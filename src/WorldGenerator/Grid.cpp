@@ -70,20 +70,20 @@ namespace WorldBuilder {
             newNeighbors->insert({neigh->index, neigh});
         }
 
-        // for (uint32_t depth = 1; depth <= dist; depth++) {
-        //     auto currentTest = newNeighbors;
-        //     newNeighbors = std::make_unique<std::unordered_map<uint32_t, GridVertex*>>();
-        //     for (auto neighTestIt : *currentTest) {
-        //         auto neighTest = neighTestIt.second;
-        //         for (auto neigh : neighTest->neighbors) {
-        //             // check if in neighbors
-        //             if (neighbors.find(neigh->index) == neighbors.end()) {
-        //                 neighbors.insert({neigh->index, neigh});
-        //                 newNeighbors->insert({neigh->index, neigh});
-        //             }
-        //         }
-        //     }
-        // }
+        for (uint32_t depth = 1; depth <= dist; depth++) {
+            auto currentTest = newNeighbors;
+            newNeighbors = std::make_unique<std::unordered_map<uint32_t, GridVertex*>>();
+            for (auto neighTestIt : *currentTest) {
+                auto neighTest = neighTestIt.second;
+                for (auto neigh : neighTest->neighbors) {
+                    // check if in neighbors
+                    if (depthNeighbors.find(neigh->index) == depthNeighbors.end()) {
+                        depthNeighbors.insert({neigh->index, neigh});
+                        newNeighbors->insert({neigh->index, neigh});
+                    }
+                }
+            }
+        }
 
         return depthNeighbors;
     }
