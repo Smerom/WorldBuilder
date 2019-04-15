@@ -60,7 +60,7 @@ namespace WorldBuilder {
         }
     }
 
-    const std::unordered_map<uint32_t, GridVertex *>& GridVertex::get_neighbors(uint32_t dist) const {
+    std::unordered_map<uint32_t, GridVertex *>& GridVertex::get_neighbors(uint32_t dist) const {
         // create 
         auto newNeighbors = std::make_shared<std::unordered_map<uint32_t, GridVertex*>>();
         std::unordered_map<uint32_t, GridVertex*> neighbors;
