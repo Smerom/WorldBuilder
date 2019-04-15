@@ -68,7 +68,7 @@ namespace WorldBuilder {
             return vector - neighborCenter;
         }
 
-        std::unordered_map<uint32_t, GridVertex *> get_neighbors(uint32_t dist) const;
+        std::unordered_map<uint32_t, GridVertex *> neighborsByDepth(uint32_t dist) const;
 
     };
 }

@@ -403,8 +403,8 @@ namespace WorldBuilder {
                             }
                             
                             // loop over neighbors
-                            for (auto neighborIt : this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors(2)) {
-                                uint32_t index = neighborIt.second->get_index();
+                            for (auto neighborIt : this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors()) {
+                                uint32_t index = neighborIt->get_index();
                                 testEdgeIt = testPlate->edgeCells.find(index);
                                 if (testEdgeIt != testPlate->edgeCells.end()) {
                                     std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
