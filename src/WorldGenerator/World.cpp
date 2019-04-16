@@ -367,7 +367,8 @@ namespace WorldBuilder {
                 // if the plates max extent overlap, test edges
                 Vec3 testCenter = math::affineRotaionMulVec(targetToTest, plate->center);
                 wb_float testAngle = math::angleBetweenUnitVectors(testPlate->center, testCenter);
-                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle || std::isnan(testAngle)) {
+                // add buffer zone for plates that just barely are close enough
+                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle + this->cellSmallAngle*3 || std::isnan(testAngle)) {
                     // some cells may interact
                     for (auto&& edgeIt : plate->edgeCells) {
                         std::shared_ptr<PlateCell> edgeCell = edgeIt.second;
