@@ -1541,6 +1541,7 @@ namespace WorldBuilder {
     
     LocationInfo World::get_locationInfo(Vec3 location) {
         LocationInfo info;
+        wb_float distWeight = 0;
         
         // TODO linear interpolation
         // simplest implementation, get the first closest cell we can find
@@ -1558,15 +1559,41 @@ namespace WorldBuilder {
                 uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
                 auto nearestIt = plate->cells.find(nearestIndex);
                 if (nearestIt != plate->cells.end()) {
-                    info.elevation = nearestIt->second->get_elevation();
-                    info.sediment = nearestIt->second->rock.sediment.get_thickness();
-                    info.tempurature = nearestIt->second->tempurature;
-                    info.precipitation = nearestIt->second->precipitation;
+                    // weight by distance
+                    wb_float weight = math::distanceBetween3Points(locationInLocal, nearestIt->second->get_vertex()->get_vector());
+                    distWeight += weight;
+
+                    info.elevation += nearestIt->second->get_elevation() * weight;
+                    info.sediment += nearestIt->second->rock.sediment.get_thickness() * weight;
+                    info.tempurature += nearestIt->second->tempurature * weight;
+                    info.precipitation += nearestIt->second->precipitation * weight;
                     info.plateId = plate->id;
-                    break;
+                }
+
+                // also loop through neighbors
+                for (auto vertIt: nearestIt->second->get_vertex()->get_neighbors()){
+                    nearestIt = plate->cells.find(vertIt->get_index());
+                    if (nearestIt != plate->cells.end()) {
+                        // weight by distance
+                        wb_float weight = math::distanceBetween3Points(locationInLocal, nearestIt->second->get_vertex()->get_vector());
+                        if (weight < this->cellSmallAngle) {
+                            distWeight += weight;
+
+                            info.elevation += nearestIt->second->get_elevation() * weight;
+                            info.sediment += nearestIt->second->rock.sediment.get_thickness() * weight;
+                            info.tempurature += nearestIt->second->tempurature * weight;
+                            info.precipitation += nearestIt->second->precipitation * weight;
+                            info.plateId = plate->id;
+                        }
+                    }
                 }
             }
         }
+
+        info.elevation = info.elevation / distWeight;
+        info.sediment = info.sediment / distWeight;
+        info.tempurature = info.tempurature / distWeight;
+        info.precipitation = info.precipitation / distWeight;
         
         return info;
     }
