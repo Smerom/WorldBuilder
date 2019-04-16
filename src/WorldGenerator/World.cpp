@@ -1571,7 +1571,7 @@ namespace WorldBuilder {
                 }
 
                 // also loop through neighbors
-                for (auto vertIt: nearestIt->second->get_vertex()->get_neighbors()){
+                for (auto vertIt: this->worldGrid->get_vertices().at(nearestIndex).get_neighbors()){
                     auto neighborIt = plate->cells.find(vertIt->get_index());
                     if (neighborIt != plate->cells.end()) {
                         // weight by distance
