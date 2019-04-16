@@ -1572,17 +1572,17 @@ namespace WorldBuilder {
 
                 // also loop through neighbors
                 for (auto vertIt: nearestIt->second->get_vertex()->get_neighbors()){
-                    nearestIt = plate->cells.find(vertIt->get_index());
-                    if (nearestIt != plate->cells.end()) {
+                    auto neighborIt = plate->cells.find(vertIt->get_index());
+                    if (neighborIt != plate->cells.end()) {
                         // weight by distance
-                        wb_float weight = math::distanceBetween3Points(locationInLocal, nearestIt->second->get_vertex()->get_vector());
+                        wb_float weight = math::distanceBetween3Points(locationInLocal, neighborIt->second->get_vertex()->get_vector());
                         if (weight < this->cellSmallAngle) {
                             distWeight += weight;
 
-                            info.elevation += nearestIt->second->get_elevation() * weight;
-                            info.sediment += nearestIt->second->rock.sediment.get_thickness() * weight;
-                            info.tempurature += nearestIt->second->tempurature * weight;
-                            info.precipitation += nearestIt->second->precipitation * weight;
+                            info.elevation += neighborIt->second->get_elevation() * weight;
+                            info.sediment += neighborIt->second->rock.sediment.get_thickness() * weight;
+                            info.tempurature += neighborIt->second->tempurature * weight;
+                            info.precipitation += neighborIt->second->precipitation * weight;
                             info.plateId = plate->id;
                         }
                     }
