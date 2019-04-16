@@ -182,7 +182,7 @@ public:
             
             std::chrono::duration<double> renderDuration = renderEnd - renderStart;
             
-            //std::cout << "Rendering took " << renderDuration.count() << " seconds." << std::endl;
+            std::cout << "Rendering took " << renderDuration.count() << " seconds." << std::endl;
             
             info.set_age(runner.get_world()->get_age());
             info.set_sealevel(runner.get_world()->get_attributes().sealevel);
