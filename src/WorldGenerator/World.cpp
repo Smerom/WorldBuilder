@@ -1560,7 +1560,7 @@ namespace WorldBuilder {
                 auto nearestIt = plate->cells.find(nearestIndex);
                 if (nearestIt != plate->cells.end()) {
                     // weight by distance
-                    wb_float weight = math::distanceBetween3Points(locationInLocal, nearestIt->second->get_vertex()->get_vector());
+                    wb_float weight = 1 / math::distanceBetween3Points(locationInLocal, nearestIt->second->get_vertex()->get_vector());
                     distWeight += weight;
 
                     info.elevation += nearestIt->second->get_elevation() * weight;
@@ -1575,7 +1575,7 @@ namespace WorldBuilder {
                     auto neighborIt = plate->cells.find(vertIt->get_index());
                     if (neighborIt != plate->cells.end()) {
                         // weight by distance
-                        wb_float weight = math::distanceBetween3Points(locationInLocal, neighborIt->second->get_vertex()->get_vector());
+                        wb_float weight = 1 / math::distanceBetween3Points(locationInLocal, neighborIt->second->get_vertex()->get_vector());
                         if (weight < this->cellSmallAngle) {
                             distWeight += weight;
 
