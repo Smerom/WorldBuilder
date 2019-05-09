@@ -1,7 +1,9 @@
+SHELL = /bin/bash
 CXX = clang++-6.0
-CPPFLAGS = -x c++ -Wall -Wextra -g -march=native -std=c++14 -stdlib=libc++ -O3 -I/usr/local/include -I./src $(shell pkg-config --cflags protobuf grpc)
+CPPFLAGS = -x c++ -Wall -Wextra -Wno-unused-parameter -g -march=native -std=c++14 -stdlib=libc++ -I/usr/local/include -I./src $(shell pkg-config --cflags protobuf grpc)
+OP=-O0
 
-LDFLAGS = -L/usr/local/lib -stdlib=libc++ -lc++ -lc++abi $(shell pkg-config --libs protobuf grpc++)
+LDFLAGS = -L/usr/local/lib -stdlib=libc++ -lc++ -g -lc++abi $(shell pkg-config --libs protobuf grpc++)
 
 API_SRC_DIR = ./src/api
 API_OBJ_DIR = ./obj/api
@@ -19,10 +21,10 @@ debug: $(API_OBJ_FILES) $(OBJ_FILES)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(API_OBJ_DIR)/%.o: $(API_SRC_DIR)/%.cc
-	$(CXX) $(CPPFLAGS) -c $^ -o $@ 
+	$(CXX) $(CPPFLAGS) $(OP) -c $^ -o $@ 
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CPPFLAGS) -c $^ -o $@
+	$(CXX) $(CPPFLAGS) $(OP) -c $^ -o $@
 
 protoc:
 	protoc --cpp_out=src/api -Isrc/proto src/proto/Basic.proto
@@ -33,6 +35,7 @@ clean:
 	rm obj/WorldGenerator/*
 
 setup:
-	[[ -d obj ]] || mkdir obj
-	[[ -d obj/api ]] || mkdir obj/api
-	[[ -d obj/WorldGenerator ]] || mkdir obj/WorldGenerator
+	$(shell [[ -d src/api ]] || mkdir src/api)
+	$(shell [[ -d obj ]] || mkdir obj)
+	$(shell [[ -d obj/api ]] || mkdir obj/api)
+	$(shell [[ -d obj/WorldGenerator ]] || mkdir obj/WorldGenerator)

@@ -29,6 +29,11 @@
 #include "VolcanicHotspot.hpp"
 
 namespace WorldBuilder {
+
+    struct WorldConfig {
+        wb_float waterDepth;
+    };
+
     struct LocationInfo {
         wb_float elevation;
         wb_float sediment;
@@ -78,7 +83,7 @@ namespace WorldBuilder {
         
     public:
         // takes ownership of the grid
-        World(Grid* theWorldGrid, std::shared_ptr<Random> randomSource);
+        World(Grid* theWorldGrid, std::shared_ptr<Random> randomSource, WorldConfig config);
         WorldUpdateTask progressByTimestep(wb_float minTimestep);
         wb_float randomPlateDensityOffset();
         
@@ -113,6 +118,7 @@ namespace WorldBuilder {
         std::vector<std::shared_ptr<PlateCell>> riftPlate(std::shared_ptr<Plate> plate);
         
         void homeostasis(wb_float timestep);
+        void updateSealevel();
         void updateTempurature();
         void updatePrecipitation();
         void supercontinentCycle();

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <thread>
+#include <algorithm>
 
 namespace WorldBuilder {
     
@@ -67,34 +68,36 @@ namespace WorldBuilder {
         
         this->age = this->age + timestep;
 
+        std::cout << "Advancing by: " << timestep << " to age: " << this->age << std::endl; 
+
         
         // movement phase
-//        RockColumn initial, final;
-//        initial = this->netRock();
+        RockColumn initial, final;
+        initial = this->netRock();
         updateTask.movement.start();
         this->columnMovementPhase(timestep);
         updateTask.movement.end();
-//        final = this->netRock();
-//        std::cout << "Rock change after movement:" << std::endl;
-//        logColumnChange(initial, final, false, false);
-//        initial = final;
+        final = this->netRock();
+        // std::cout << "Rock change after movement:" << std::endl;
+        // logColumnChange(initial, final, false, false);
+        initial = final;
         
         // transistion phase
         updateTask.transition.start();
         this->transitionPhase(timestep);
         updateTask.transition.end();
-//        final = this->netRock();
-//        std::cout << "Rock change after transition:" << std::endl;
-//        logColumnChange(initial, final, false, false);
-//        initial = final;
+        final = this->netRock();
+        // std::cout << "Rock change after transition:" << std::endl;
+        // logColumnChange(initial, final, false, false);
+        initial = final;
         
         // modification phase
         updateTask.modification.start();
         this->columnModificationPhase(timestep);
         updateTask.modification.end();
-//        final = this->netRock();
-//        std::cout << "Rock change after modification:" << std::endl;
-//        logColumnChange(initial, final, false, false);
+        final = this->netRock();
+        // std::cout << "Rock change after modification:" << std::endl;
+        // logColumnChange(initial, final, false, false);
         
         return updateTask;
     }
@@ -166,6 +169,9 @@ namespace WorldBuilder {
         
         // float it!
         this->homeostasis(timestep);
+
+        // update sealevel!
+        this->updateSealevel();
         
         // update attributes for cells
         this->updatePrecipitation();
@@ -178,18 +184,18 @@ namespace WorldBuilder {
         this->processAllHotspots(timestep);
         
         // thermal first
-        //RockColumn initial, final;
-        //initial = this->netRock();
+        // RockColumn initial, final;
+        // initial = this->netRock();
         this->erodeThermalSmoothing(timestep);
-        //final = this->netRock();
-//        std::cout << " Change after thermal erosion: " << std::endl;
-//        logColumnChange(initial, final, false, false);
+        // final = this->netRock();
+        // std::cout << " Change after thermal erosion: " << std::endl;
+        // logColumnChange(initial, final, false, false);
         
-        //initial = final;
+        // initial = final;
         this->erodeSedimentTransport(timestep);
-        //final = this->netRock();
-//        std::cout << "Change after sediment transport: " << std::endl;
-//        logColumnChange(initial, final, false, false);
+        // final = this->netRock();
+        // std::cout << "Change after sediment transport: " << std::endl;
+        // logColumnChange(initial, final, false, false);
     }
     
 /****************************** Transistion ******************************/
@@ -346,6 +352,11 @@ namespace WorldBuilder {
     
     // knits the edges of plates together so the edge cells can interact
     void World::knitPlates(std::shared_ptr<Plate> plate) {
+        wb_float knitDistance = 2.0 * this->cellSmallAngle;
+
+        // logging vars
+        uint32_t offEdgeCount = 0;
+        uint32_t connections = 0;
         
         for (auto&& plateIt : this->plates) {
             std::shared_ptr<Plate> testPlate = plateIt.second;
@@ -356,7 +367,8 @@ namespace WorldBuilder {
                 // if the plates max extent overlap, test edges
                 Vec3 testCenter = math::affineRotaionMulVec(targetToTest, plate->center);
                 wb_float testAngle = math::angleBetweenUnitVectors(testPlate->center, testCenter);
-                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle || std::isnan(testAngle)) {
+                // add buffer zone for plates that just barely are close enough
+                if (testAngle < plate->maxEdgeAngle + testPlate->maxEdgeAngle + this->cellSmallAngle*3 || std::isnan(testAngle)) {
                     // some cells may interact
                     for (auto&& edgeIt : plate->edgeCells) {
                         std::shared_ptr<PlateCell> edgeCell = edgeIt.second;
@@ -376,8 +388,8 @@ namespace WorldBuilder {
                             edgeCell->edgeInfo->otherPlateLastNearest[testPlate->id] = nearestGridIndex;
                             
                             // check if it is an edge, and neighbors
-                            auto testEdgeIt = testPlate->cells.find(nearestGridIndex);
-                            if (testEdgeIt != testPlate->cells.end()) {
+                            auto testEdgeIt = testPlate->edgeCells.find(nearestGridIndex);
+                            if (testEdgeIt != testPlate->edgeCells.end()) {
                                 std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
                                 uint64_t neighborKey;
                                 neighborKey = ((uint64_t)testPlate->id << 32) + nearestGridIndex;
@@ -387,23 +399,31 @@ namespace WorldBuilder {
                                 edgeData.cellIndex = nearestGridIndex;
                                 edgeData.distance = neighborDistance;
                                 edgeCell->edgeInfo->otherPlateNeighbors[neighborKey] = edgeData; //neighborDistance;
+
+                                connections++;
                             }
                             
                             // loop over neighbors
-                            for (auto neighborIt = this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors().begin(); neighborIt != this->worldGrid->get_vertices()[nearestGridIndex].get_neighbors().end(); neighborIt++)
-                            {
-                                uint32_t index = (*neighborIt)->get_index();
-                                testEdgeIt = testPlate->cells.find(index);
-                                if (testEdgeIt != testPlate->cells.end()) {
+                            for (auto neighborIt : this->worldGrid->get_vertices()[nearestGridIndex].neighborsByDepth(3)) {
+                                uint32_t index = neighborIt.second->get_index();
+                                testEdgeIt = testPlate->edgeCells.find(index);
+                                if (testEdgeIt != testPlate->edgeCells.end()) {
                                     std::shared_ptr<PlateCell> testEdge = testEdgeIt->second;
+                                    // check distance
+                                    wb_float neighborDistance = math::distanceBetween3Points(targetEdgeInTest, testEdge->get_vertex()->get_vector());
+                                    if (neighborDistance > knitDistance) {
+                                        continue;
+                                    }
+                                    // add edge
                                     uint64_t neighborKey;
                                     neighborKey = ((uint64_t)testPlate->id << 32) + index;
-                                    wb_float neighborDistance = math::distanceBetween3Points(targetEdgeInTest, testEdge->get_vertex()->get_vector());
                                     EdgeNeighbor edgeData;
                                     edgeData.plateIndex = testPlate->id;
                                     edgeData.cellIndex = index;
                                     edgeData.distance = neighborDistance;
                                     edgeCell->edgeInfo->otherPlateNeighbors[neighborKey] = edgeData;
+
+                                    connections++;
                                 }
                             }
                         }
@@ -411,6 +431,19 @@ namespace WorldBuilder {
                 }
             }
         }
+        // calculate off edge cells
+        for (auto&& edgeIt : plate->edgeCells) {
+            std::shared_ptr<PlateCell> edgeCell = edgeIt.second;
+            for (auto& neighborIt : this->worldGrid->get_vertices()[edgeCell->vertex->get_index()].get_neighbors()) {
+                auto testEdgeIt = plate->cells.find(neighborIt->get_index());
+                if (testEdgeIt == plate->cells.end()) {
+                    offEdgeCount++;
+                }
+            }
+        }
+
+        // print knit stats for plate
+        std::cout << "Missing edges: " << offEdgeCount << " with other plate connections: " << connections << " Fraction: " << wb_float(connections) / wb_float(offEdgeCount) << std::endl;
     }
     
     // renormalize plates and transfer rock from cells that are too thin
@@ -554,6 +587,57 @@ namespace WorldBuilder {
             std::shared_ptr<Plate> plate = plateIt->second;
             plate->homeostasis(this->attributes, timestep);
         }
+    }
+
+    void World::updateSealevel() {
+        std::vector<std::shared_ptr<PlateCell>> cells;
+        // compute size
+        unsigned long size = 0;
+        for (auto&& plateIt : this->plates) {
+            auto plate = plateIt.second;
+            size += plate->cells.size();
+        }
+        cells.reserve(size);
+
+        // add cells to vector
+        for (auto&& plateIt : this->plates) {
+            auto plate = plateIt.second;
+            for (auto&& cellIt : plate->cells) {
+                cells.push_back(cellIt.second);
+            }
+        }
+
+        // sort the thing
+        std::sort(cells.begin(), cells.end(), 
+            [](const std::shared_ptr<PlateCell> a, const std::shared_ptr<PlateCell> b) -> bool
+        {
+            return a->get_elevation() < b->get_elevation();
+        });
+
+        // loop through until we've used up all the water
+        wb_float currentWater = 0;
+        wb_float currentElevation = cells[0]->get_elevation();
+        //std::cout << "Starting fill elevation: " << currentElevation << std::endl;
+        unsigned long seaCells = 0;
+        for (auto&& cell : cells) {
+            wb_float nextElevation = cell->get_elevation();
+            wb_float nextWater = currentWater + (seaCells * (nextElevation - currentElevation));
+            if (nextWater > this->attributes.totalSeaDepth) {
+                // compute exact level
+                wb_float remainingDepth = this->attributes.totalSeaDepth - currentWater;
+                currentElevation = currentElevation + remainingDepth / seaCells;
+                break;
+            }
+            currentElevation = nextElevation;
+            currentWater = nextWater;
+            seaCells++;
+        }
+
+        //std::cout << "Ending fill elevation: " << currentElevation << std::endl;
+
+        // set the sea level
+        this->attributes.sealevel = currentElevation;
+        //std::cout << "Current water: " << currentWater << " Total Water: " << this->attributes.totalSeaDepth << std::endl;
     }
     
     void World::updateTempurature() {
@@ -782,7 +866,7 @@ namespace WorldBuilder {
                 
                 // create sediement
                 wb_float activeElevation = cell->get_elevation();
-                wb_float elevationAboveSealevel = activeElevation - 9260;
+                wb_float elevationAboveSealevel = activeElevation - this->attributes.sealevel;
                 // move some stuff to lower elevation cells
                 wb_float erosionFactor = elevationAboveSealevel / (4000);
                 wb_float erosionHeight = 0;
@@ -793,7 +877,7 @@ namespace WorldBuilder {
                     if (erosionFactor > 0.5) {
                         erosionFactor = 0.5;
                     }
-                    erosionHeight = erosionFactor * timestep * (activeElevation - 9260);
+                    erosionHeight = erosionFactor * timestep * (activeElevation - this->attributes.sealevel);
                     RockSegment erodedSegment = cell->erodeThickness(erosionHeight);
                     cell->rock.sediment = combineSegments(cell->rock.sediment, erodedSegment);
                 }
@@ -906,6 +990,8 @@ namespace WorldBuilder {
         // build from node heights
         std::vector<std::pair<MaterialFlowNode*, wb_float>> outflowCandidates;
         // find outflow only, inflow set from outflow nodes
+        size_t plateEdges = 0;
+        size_t edgeCellCount = 0;
         for (auto&& plateIt : this->plates) {
             std::shared_ptr<Plate>& plate = plateIt.second;
             for (auto&& cellIt : plate->cells) {
@@ -922,33 +1008,39 @@ namespace WorldBuilder {
                     if (neighborIt != plate->cells.end()) {
                         std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                         wb_float heightDifference = elevation - (neighborCell->flowNode->elevation());
-                        if (heightDifference > 0) {
+                        if (heightDifference > float_epsilon) {
                             // downhill node found, take note
                             outflowCandidates.push_back(std::make_pair(neighborCell->flowNode, heightDifference));
                             if (heightDifference > largestHeightDifference) {
                                 largestHeightDifference = heightDifference;
                             }
                             hasOutflow = true;
+                        } else if (std::abs(heightDifference) <= float_epsilon) {
+                            cell->flowNode->equalNodes.insert(neighborCell->flowNode);
                         }
                     }
                 }
                 if (cell->edgeInfo != nullptr) {
+                    edgeCellCount++;
                     // we are an edge, check other plate neighbors
-                    for (auto neighborIndexIt = cell->edgeInfo->otherPlateNeighbors.begin(); neighborIndexIt != cell->edgeInfo->otherPlateNeighbors.end(); neighborIndexIt++) {
-                        auto neighborPlateIt = this->plates.find(neighborIndexIt->second.plateIndex);
+                    for (auto&& neighborIndexIt : cell->edgeInfo->otherPlateNeighbors) {
+                        auto neighborPlateIt = this->plates.find(neighborIndexIt.second.plateIndex);
                         if (neighborPlateIt != this->plates.end()){
                             std::shared_ptr<Plate>& neighborPlate = neighborPlateIt->second;
-                            auto neighborIt = neighborPlate->cells.find(neighborIndexIt->second.cellIndex);
+                            auto neighborIt = neighborPlate->cells.find(neighborIndexIt.second.cellIndex);
                             if (neighborIt != neighborPlate->cells.end()) {
                                 std::shared_ptr<PlateCell>& neighborCell = neighborIt->second;
                                 wb_float heightDifference = elevation - (neighborCell->flowNode->elevation());
-                                if (heightDifference > 0) {
+                                if (heightDifference > float_epsilon) {
+                                    plateEdges++;
                                     // downhill node found, take note
                                     outflowCandidates.push_back(std::make_pair(neighborCell->flowNode, heightDifference));
                                     if (heightDifference > largestHeightDifference) {
                                         largestHeightDifference = heightDifference;
                                     }
                                     hasOutflow = true;
+                                } else if (std::abs(heightDifference) <= float_epsilon) {
+                                    cell->flowNode->equalNodes.insert(neighborCell->flowNode);
                                 }
                             }
                         }
@@ -1049,6 +1141,11 @@ namespace WorldBuilder {
                 outflowCandidates.clear();
             } // end for each cell in plate
         } // end for each plate
+
+        // log number of edges crossing plate boundaries
+        //std::cout << "Number of cross boundary edges: " << plateEdges << std::endl;
+        //std::cout << "Number of boundary cells: " << edgeCellCount << std::endl;
+
         return graph;
     }
     
@@ -1057,7 +1154,9 @@ namespace WorldBuilder {
         
         
         // add thickness (currently roughly bassed on hawaii seamount chain)
-        this->availableHotspotThickness += 8500*5*timestep * 10;
+        // at 8800 km^3 per million years on average
+        // hawaii volume km * years * target num of hotspots * convert to meters / area in km ^2
+        this->availableHotspotThickness += 8500*timestep * 10 * 1000 / this->attributes.cellArea;
         
         wb_float usedThickness = 0;
         for(auto&& hotspot : this->hotspots) {
@@ -1069,45 +1168,66 @@ namespace WorldBuilder {
         // create a hotspot if we don't have enough
         if (this->hotspots.size() < 10) {
             std::shared_ptr<VolcanicHotspot> theHotspot = std::make_shared<VolcanicHotspot>();
-            theHotspot->weight = 1;
+            theHotspot->weight = std::abs(this->randomSource->randomNormal(10, 4));
             theHotspot->worldLocation = this->randomSource->getRandomPointUnitSphere();
             
-            // update weights
-            for(auto&& hotspot : this->hotspots) {
-                hotspot->weight = hotspot->weight * this->hotspots.size() / (this->hotspots.size() + 1);
-            }
-            theHotspot->weight = theHotspot->weight / (this->hotspots.size() + 1);
-            
             this->hotspots.insert(theHotspot);
-        }
-        
-        
+
+            // update nomalized weights
+            wb_float totalWeight = 0;
+            for(auto&& hotspot : this->hotspots) {
+                totalWeight += hotspot->weight;
+            }
+            for(auto&& hotspot : this->hotspots) {
+                hotspot->normWeight = hotspot->weight / totalWeight;
+            }
+        }        
     }
     
     wb_float World::processHotspot(std::shared_ptr<VolcanicHotspot> hotspot, wb_float timestep) {
+
+        // make sticky hotspot
+        // TODO, make configurable
+        bool validOutflow = false;
+        std::vector<std::shared_ptr<PlateCell>> validCells;
+        if (auto plate = hotspot->lastPlate.lock()) { 
+            if (auto cell = hotspot->lastCell.lock()) {
+                Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
+                wb_float dist = math::distanceBetween3Points(locationInLocal, plate->center) * this->attributes.radius;
+                // make config! (in km)
+                if (dist < 150){
+                    validOutflow = true;
+                    validCells.push_back(cell);
+                }
+            }
+        }
         
         // find the relavent plate cell
-        std::vector<std::shared_ptr<PlateCell>> validCells;
-        for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
-            std::shared_ptr<Plate> plate = plateIt->second;
-            
-            // check if we can interact
-            Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
-            wb_float testAngle = math::angleBetweenUnitVectors(locationInLocal, plate->center);
-            if (plate->maxEdgeAngle == 0 || testAngle < plate->maxEdgeAngle || std::isnan(testAngle)) {
-                uint32_t hint = 0;
-                // get our last closest cell index for this plate
-                if (hotspot->closestPlateCellIndex.find(plate->id) != hotspot->closestPlateCellIndex.end()) {
-                    hint = hotspot->closestPlateCellIndex.find(plate->id)->second;
-                }
-                uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
-                // update neareset
-                hotspot->closestPlateCellIndex[plate->id] = nearestIndex;
+        if (!validOutflow) {
+            for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
+                std::shared_ptr<Plate> plate = plateIt->second;
                 
-                // check if in plate
-                auto nearestIt = plate->cells.find(nearestIndex);
-                if (nearestIt != plate->cells.end()) {
-                    validCells.push_back(nearestIt->second);
+                // check if we can interact
+                Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
+                wb_float testAngle = math::angleBetweenUnitVectors(locationInLocal, plate->center);
+                if (plate->maxEdgeAngle == 0 || testAngle < plate->maxEdgeAngle || std::isnan(testAngle)) {
+                    uint32_t hint = 0;
+                    // get our last closest cell index for this plate
+                    if (hotspot->closestPlateCellIndex.find(plate->id) != hotspot->closestPlateCellIndex.end()) {
+                        hint = hotspot->closestPlateCellIndex.find(plate->id)->second;
+                    }
+                    uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
+                    // update neareset
+                    hotspot->closestPlateCellIndex[plate->id] = nearestIndex;
+                    
+                    // check if in plate
+                    auto nearestIt = plate->cells.find(nearestIndex);
+                    if (nearestIt != plate->cells.end()) {
+                        validCells.push_back(nearestIt->second);
+                        // TODO, make less hacky in setting last values for hotspot
+                        hotspot->lastPlate = plate;
+                        hotspot->lastCell = nearestIt->second;
+                    }
                 }
             }
         }
@@ -1116,8 +1236,7 @@ namespace WorldBuilder {
         wb_float usedThickness = 0;
         if (validCells.size() > 0) {
             // add the weighted thickness
-            // TODO add timestep dependence
-            wb_float usedThickness = this->availableHotspotThickness * hotspot->weight;
+            wb_float usedThickness = this->availableHotspotThickness * hotspot->normWeight;
             
             // add percent to each valid cell
             for(auto && cell : validCells) {
@@ -1422,6 +1541,7 @@ namespace WorldBuilder {
     
     LocationInfo World::get_locationInfo(Vec3 location) {
         LocationInfo info;
+        wb_float distWeight = 0;
         
         // TODO linear interpolation
         // simplest implementation, get the first closest cell we can find
@@ -1439,15 +1559,41 @@ namespace WorldBuilder {
                 uint32_t nearestIndex = this->getNearestGridIndex(locationInLocal, hint);
                 auto nearestIt = plate->cells.find(nearestIndex);
                 if (nearestIt != plate->cells.end()) {
-                    info.elevation = nearestIt->second->get_elevation();
-                    info.sediment = nearestIt->second->rock.sediment.get_thickness();
-                    info.tempurature = nearestIt->second->tempurature;
-                    info.precipitation = nearestIt->second->precipitation;
+                    // weight by distance
+                    wb_float weight = 1 / math::distanceBetween3Points(locationInLocal, nearestIt->second->get_vertex()->get_vector());
+                    distWeight += weight;
+
+                    info.elevation += nearestIt->second->get_elevation() * weight;
+                    info.sediment += nearestIt->second->rock.sediment.get_thickness() * weight;
+                    info.tempurature += nearestIt->second->tempurature * weight;
+                    info.precipitation += nearestIt->second->precipitation * weight;
                     info.plateId = plate->id;
-                    break;
+                }
+
+                // also loop through neighbors
+                for (auto vertIt: this->worldGrid->get_vertices().at(nearestIndex).get_neighbors()){
+                    auto neighborIt = plate->cells.find(vertIt->get_index());
+                    if (neighborIt != plate->cells.end()) {
+                        // weight by distance
+                        wb_float weight = 1 / math::distanceBetween3Points(locationInLocal, neighborIt->second->get_vertex()->get_vector());
+                        if (weight < this->cellSmallAngle) {
+                            distWeight += weight;
+
+                            info.elevation += neighborIt->second->get_elevation() * weight;
+                            info.sediment += neighborIt->second->rock.sediment.get_thickness() * weight;
+                            info.tempurature += neighborIt->second->tempurature * weight;
+                            info.precipitation += neighborIt->second->precipitation * weight;
+                            info.plateId = plate->id;
+                        }
+                    }
                 }
             }
         }
+
+        info.elevation = info.elevation / distWeight;
+        info.sediment = info.sediment / distWeight;
+        info.tempurature = info.tempurature / distWeight;
+        info.precipitation = info.precipitation / distWeight;
         
         return info;
     }
@@ -1510,7 +1656,7 @@ namespace WorldBuilder {
     }
     
     /*************** Constructors ***************/
-    World::World(Grid *theWorldGrid, std::shared_ptr<Random> random) : worldGrid(theWorldGrid), plates(10), randomSource(random), _nextPlateId(0), availableHotspotThickness(0){
+    World::World(Grid *theWorldGrid, std::shared_ptr<Random> random, WorldConfig config) : worldGrid(theWorldGrid), plates(10), randomSource(random), _nextPlateId(0), availableHotspotThickness(0){
         // set default rock column
         this->divergentOceanicColumn.root = RockSegment(84000.0, 3200.0);
         this->divergentOceanicColumn.oceanic = RockSegment(6000.0, 2890.0);
@@ -1518,8 +1664,12 @@ namespace WorldBuilder {
         // set attributes
         this->attributes.mantleDensity = 3400;
         this->attributes.radius = 6367;
-        this->attributes.sealevel = 9620;
+        this->attributes.totalSeaDepth = wb_float(theWorldGrid->verts_size()) * config.waterDepth; // average depth for Earth is 2510
+        // TODO, calculate on initial run
+        this->attributes.sealevel = 9620; // very rough start, dynamic after first run?
         this->attributes.waterDensity = 1026;
+
+        this->attributes.cellArea = 8 * math::piOverTwo * this->attributes.radius * this->attributes.radius / theWorldGrid->verts_size();
         
         // null transfer
         //this->momentumTransfer = nullptr;

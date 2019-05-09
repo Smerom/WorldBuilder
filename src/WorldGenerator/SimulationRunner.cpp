@@ -39,7 +39,7 @@ namespace WorldBuilder {
             if (this->shouldLogRockDelta == true) {
                 RockColumn newNet = this->theWorld->netRock();
                 std::cout << "Rock change after full round:" << std::endl;
-                logColumnChange(this->initialRock, newNet, true, false);
+                logColumnChange(this->initialRock, newNet, true, true);
             }
         }
         

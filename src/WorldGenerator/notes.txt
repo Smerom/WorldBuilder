@@ -1,0 +1,8 @@
+Earth:
+Ocean volume: 1.3*10^9 km^3
+Area: 5.1*10^8 km^2
+Computed Water: 2.5 km deep on average
+
+
+Rough erosion rates:
+Angle of repose (himalaya): 6,000m / 40,000m (Locally: 35-45 degrees)

@@ -36,17 +36,23 @@ public:
         this->tag = theTag;
     }
     
-    Status GenerateWorld(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::api::SimulationInfo, ::api::Grid>* stream) override {
+    Status GenerateWorld(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::api::SimulationInfo, ::api::SimulationRequest>* stream) override {
         
         std::cout << "Attempting to build world" << std::endl;
         
         // read the stream until end
         uint32_t gridVertexCount;
         uint32_t currentGridCount = 0;
-        api::Grid readGrid;
+        api::SimulationRequest request;
         
         WorldBuilder::Grid *grid;
-        stream->Read(&readGrid);
+        stream->Read(&request);
+        if (!request.has_grid()) {
+            std::cout << "Expected Grid" << std::endl;
+            return Status::CANCELLED;
+        }
+
+        auto readGrid = request.grid();
         if (readGrid.totalverts() == 0) {
             return Status::CANCELLED;
         } else {
@@ -55,26 +61,45 @@ public:
             grid->addGrpcGridPart(&readGrid);
             currentGridCount += readGrid.vertices_size();
         }
-        // read remaining grid
+        // read remaining RequestAsyncClientStreaming
         while (currentGridCount < gridVertexCount) {
-            stream->Read(&readGrid);
+            stream->Read(&request);
+            if (!request.has_grid()) {
+                std::cout << "Expected Grid" << std::endl;
+                return Status::CANCELLED;
+            }
+            
+            auto readGrid = request.grid();
             grid->addGrpcGridPart(&readGrid);
             currentGridCount += readGrid.vertices_size();
         }
         
         // finish grid creation
         grid->buildCenters();
+
+        // get the initialization values
+        stream->Read(&request);
+        if (!request.has_initialization()){
+            std::cout << "No initialization sent" << std::endl;
+            return Status::CANCELLED;
+        }
+
+        auto init = request.initialization();
+
+        WorldBuilder::WorldConfig config;
+
+        config.waterDepth = init.waterdepth();
         
         std::random_device rd;
-        //uint seed = 2202871464; // current test seed
-        uint seed = rd(); // get a random seed
+        uint seed = 3344296053; // current test seed
+        //uint seed = rd(); // get a random seed
         std::printf("Random Seed: %u\n", seed);
         // create the generator
         std::shared_ptr<WorldBuilder::Random> randomSource(new WorldBuilder::Random(seed));
-        WorldBuilder::SimulationRunner runner(new WorldBuilder::BombardmentGenerator(randomSource), new WorldBuilder::World(grid, randomSource));
-        runner.set_runTimesteps(5);
+        WorldBuilder::SimulationRunner runner(new WorldBuilder::BombardmentGenerator(randomSource), new WorldBuilder::World(grid, randomSource, config));
+        runner.set_runTimesteps(10);
         runner.set_runMinTimestep(0.05);
-        runner.shouldLogRunTiming = true;
+        runner.shouldLogRunTiming = false;
         runner.shouldLogRockDelta = false;
         
         bool open = true;
@@ -157,9 +182,10 @@ public:
             
             std::chrono::duration<double> renderDuration = renderEnd - renderStart;
             
-            //std::cout << "Rendering took " << renderDuration.count() << " seconds." << std::endl;
+            std::cout << "Rendering took " << renderDuration.count() << " seconds." << std::endl;
             
             info.set_age(runner.get_world()->get_age());
+            info.set_sealevel(runner.get_world()->get_attributes().sealevel);
             open = stream->Write(info);
             
             //open = false; // only one to capture starting state

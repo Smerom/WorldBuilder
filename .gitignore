@@ -1,3 +1,5 @@
 debug
 obj/
 .vscode/
+*.pb.cc
+*.pb.h

@@ -14,6 +14,7 @@
 #include <unordered_set>
 #include <set>
 #include <queue>
+#include <iostream>
 
 namespace WorldBuilder {
     class FlowEdge;
@@ -48,10 +49,11 @@ namespace WorldBuilder {
         MaterialFlowBasin* basin;
     public:
         
-        MaterialFlowNode() : materialHeight(0), suspendedMaterialHeight(0), touched(false), offsetHeight(0), basin(nullptr){};
+        MaterialFlowNode() : materialHeight(0), suspendedMaterialHeight(0), basin(nullptr), touched(false), offsetHeight(0){};
         
         std::vector<std::shared_ptr<FlowEdge>> outflowTargets;
         std::vector<std::shared_ptr<FlowEdge>> inflowTargets;
+        std::unordered_set<MaterialFlowNode*> equalNodes;
         bool touched;
         
         wb_float offsetHeight;
@@ -99,6 +101,15 @@ namespace WorldBuilder {
         
         wb_float elevation() const{
             return materialHeight + offsetHeight + suspendedMaterialHeight; // include suspended material in elevation as it is effectively part of the cell when not flowing the graph
+        }
+
+        void log() const {
+            std::cout << "Logging Node: " << std::endl;
+            std::cout << "Basin: " << this->basin << std::endl;
+            std::cout << "Inflow count: " << this->inflowTargets.size() << std::endl;
+            std::cout << "Outflow count: " << this->outflowTargets.size() << std::endl;
+            std::cout << "Equal count: " << this->equalNodes.size() << std::endl;
+            std::cout << "Elevation: " << this->elevation() << std::endl;
         }
         
         bool checkWeight() const;
@@ -165,12 +176,19 @@ namespace WorldBuilder {
                 this->upslopeCandidates.insert(upslopeNode);
             }
         }
-        void addNode(MaterialFlowNode* node) {
-            // remove from upslope if needed
+
+        // adds a single node, and removes from upslope if present.
+        // ignores equal nodes
+        void addSingleNode(MaterialFlowNode* node) {
+            // std::cout << "Logging add single" << std::endl;
+            // node->log();
             this->upslopeCandidates.erase(node);
-            // add to nodes
+            node->set_basin(this);
             this->nodes.insert(node);
         }
+
+        void addEqualNodes(std::unordered_set<MaterialFlowNode*> &equalNodes, MaterialFlowNode* testNode);
+        void addNode(std::unordered_set<MaterialFlowNode*> &uphillNodes, std::unordered_set<MaterialFlowNode*> &downhillNodes, MaterialFlowNode* node);
     };
     
     // want smallest on top of queue

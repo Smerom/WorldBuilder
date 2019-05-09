@@ -59,4 +59,33 @@ namespace WorldBuilder {
             vertexIt->neighborCenter = center;
         }
     }
+
+    std::unordered_map<uint32_t, GridVertex *> GridVertex::neighborsByDepth(uint32_t dist) const {
+        // create 
+        auto newNeighbors = std::make_shared<std::unordered_map<uint32_t, GridVertex*>>();
+        std::unordered_map<uint32_t, GridVertex*> depthNeighbors;
+        //neighbors.reserve(/*some count*/);
+        for (auto neigh : this->neighbors) {
+            depthNeighbors.insert({neigh->index, neigh});
+            newNeighbors->insert({neigh->index, neigh});
+        }
+
+        for (uint32_t depth = 1; depth < dist; depth++) {
+            auto currentTest = newNeighbors;
+            newNeighbors = std::make_unique<std::unordered_map<uint32_t, GridVertex*>>();
+            for (auto neighTestIt : *currentTest) {
+                auto neighTest = neighTestIt.second;
+                for (auto neigh : neighTest->neighbors) {
+                    // check if in neighbors
+                    if (depthNeighbors.find(neigh->index) == depthNeighbors.end()) {
+                        depthNeighbors.insert({neigh->index, neigh});
+                        newNeighbors->insert({neigh->index, neigh});
+                    }
+                }
+            }
+        }
+
+        return depthNeighbors;
+    }
+
 }

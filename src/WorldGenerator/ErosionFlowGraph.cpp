@@ -150,30 +150,45 @@ namespace WorldBuilder {
                 result.result = Collision;
                 result.collisionBasin = nextNode->get_basin();
                 if (result.collisionBasin == this) {
-                    throw std::logic_error("bad");
+
+                    std::cout << std::endl;
+                    std::cout << std::endl;
+                    std::cout << "EXEPTION!!!" << std::endl;
+                    std::cout << std::endl;
+                    std::cout << "Basin Size: " << this->nodes.size() << " Uphill count: " << this->upslopeCandidates.size() << std::endl;
+                    std::cout << "Logging nodes:" << std::endl;
+                    for(auto node : this->nodes){
+                        node->log();
+                    }
+                    std::cout << "Logging upslope nodes:" << std::endl;
+                    for(auto node : this->upslopeCandidates){
+                        node->log();
+                    }
+
+                    throw std::logic_error("Next basin returned self");
                 }
-            } else {
-                nextNode->set_basin(this);
-                this->addNode(nextNode);
-            }
+            } 
         }
         
         // check overflow
         if (result.result == Continue) {
+            std::unordered_set<MaterialFlowNode*> uphillNodes;
+            std::unordered_set<MaterialFlowNode*> downhillNodes;
+            this->addNode(uphillNodes, downhillNodes, nextNode);
             // add all our uphill neighbors
-            for (auto&& edge : nextNode->inflowTargets) {
-                this->addUpslope(edge->source);
+            for (auto&& node : uphillNodes) {
+                this->addUpslope(node);
             }
             // test all downhill neighbors
             wb_float outElevation = nextNode->elevation();
             bool overflowFound = false;
             MaterialFlowNode* overflowTarget = nullptr;
-            for (auto&& edge : nextNode->outflowTargets) {
-                if (this->nodes.find(edge->destination) == this->nodes.end()) {
-                    if (edge->destination->elevation() < outElevation) {
-                        outElevation = edge->destination->elevation();
+            for (auto&& node : downhillNodes) {
+                if (this->nodes.find(node) == this->nodes.end()) {
+                    if (node->elevation() < outElevation) {
+                        outElevation = node->elevation();
                         overflowFound = true;
-                        overflowTarget = edge->destination;
+                        overflowTarget = node;
                     }
                 }
             }
@@ -196,8 +211,7 @@ namespace WorldBuilder {
         
         // merge nodes into this
         for (auto&& node : absorbedBasin->nodes) {
-            this->addNode(node);
-            node->set_basin(this);
+            this->addSingleNode(node);
         }
         absorbedBasin->nodes.clear();
         
@@ -210,6 +224,43 @@ namespace WorldBuilder {
         // merge thicknesses
         this->remainingThickness += absorbedBasin->remainingThickness;
         absorbedBasin->remainingThickness = 0;
+    }
+
+
+    void MaterialFlowBasin::addEqualNodes(std::unordered_set<MaterialFlowNode*> &equalNodes, MaterialFlowNode* testNode){
+        equalNodes.insert(testNode);
+        for (auto eqNode : testNode->equalNodes) {
+            if (equalNodes.find(eqNode) == equalNodes.end()){
+                this->addEqualNodes(equalNodes, eqNode);
+            }
+        }
+    };
+
+    void MaterialFlowBasin::addNode(std::unordered_set<MaterialFlowNode*> &uphillNodes, std::unordered_set<MaterialFlowNode*> &downhillNodes, MaterialFlowNode* node) {
+        std::unordered_set<MaterialFlowNode*> equalNodes;
+
+        this->addEqualNodes(equalNodes, node);
+
+        for (auto nNode : equalNodes) {
+            nNode->set_basin(this);
+            // remove from upslope if needed
+            this->upslopeCandidates.erase(nNode);
+            // add to nodes
+            this->nodes.insert(nNode);
+        }
+
+        for (auto nNode : equalNodes) {
+            for (auto upslopeEdge : nNode->inflowTargets) {
+                if (upslopeEdge->source->get_basin() != this) {
+                    uphillNodes.insert(upslopeEdge->source);
+                }
+            }
+            for (auto downslopeEdge : nNode->outflowTargets) {
+                if (downslopeEdge->destination->get_basin() != this) {
+                    downhillNodes.insert(downslopeEdge->destination);
+                }
+            }
+        }
     }
     
     

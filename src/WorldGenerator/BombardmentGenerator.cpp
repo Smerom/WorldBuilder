@@ -28,6 +28,10 @@ namespace WorldBuilder {
                 cell->age = 11.0;
                 cell->rock.root.set_density(3200);
                 cell->rock.root.set_thickness(prehistoricRootThickness);
+
+                // add some default cont thickness
+                cell->rock.continental.set_density(2700);
+                cell->rock.continental.set_thickness(2000);
             }
             
             // create our impact crater radii
