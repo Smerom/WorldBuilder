@@ -91,8 +91,9 @@ public:
         config.waterDepth = init.waterdepth();
         
         std::random_device rd;
-        uint seed = 3344296053; // current test seed
-        //uint seed = rd(); // get a random seed
+        // TODO: add seed to initialization
+        // uint seed = 3344296053; // current test seed
+        uint seed = rd(); // get a random seed
         std::printf("Random Seed: %u\n", seed);
         // create the generator
         std::shared_ptr<WorldBuilder::Random> randomSource(new WorldBuilder::Random(seed));
