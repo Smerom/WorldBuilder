@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package api;
 
-option go_package = "github.com/Smerom/SimulationHandler/simapi/api";
+option go_package = "github.com/Smerom/WorldGeneratorAPI/api";
 
 
 message SimulationRequest {
