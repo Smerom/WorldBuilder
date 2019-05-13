@@ -92,8 +92,8 @@ namespace WorldBuilder {
                         wb_float bedrockDepth = rate * timestep;
 
                         // erode?
-                        this->source->rock.removeThickness(bedrockDepth);
-                        suspendedMaterial += bedrockDepth;
+                        auto rockSegmentEroded = this->source->erodeThickness(bedrockDepth);
+                        suspendedMaterial += rockSegmentEroded.get_thickness();
                     } else {
                         // deposit
                         wb_float depositAmount = (suspendedMaterial - capacity);

@@ -35,9 +35,6 @@ namespace WorldBuilder {
         if (thickness < 0) {
             std::cout << "RockColumn::removeThickness Thickness of: " << thickness << std::endl;
             throw std::invalid_argument("Invalid Thickness, must be >=0 and finite");
-        } else if (thickness > this->thickness()) {
-            std::cout << "RockColumn::removeThickness Thickness of: " << thickness << " from column thickness: " << this->thickness() << std::endl;
-            throw std::invalid_argument("Invalid Thickness, must be less than column thickness");
         }
         wb_float remainingThickness = thickness;
         
