@@ -17,6 +17,7 @@
 namespace WorldBuilder {
     
     class PlateCell;
+    class MaterialFlowNode;
     /***************  Edge Cell Info ***************/
     /*  Additional info required for Plate Cells on the edge of a plate
      *
@@ -75,7 +76,9 @@ namespace WorldBuilder {
         
         std::shared_ptr<EdgeCellInfo> edgeInfo; // shared with edge list
         std::shared_ptr<DisplacementInfo> displacement;
-                
+        
+        MaterialFlowNode* flowNode;
+        
         wb_float age;
         wb_float tempurature;
         wb_float precipitation; // per million years
