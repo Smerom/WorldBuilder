@@ -32,6 +32,10 @@ namespace WorldBuilder {
     }
     
     RockColumn RockColumn::removeThickness(wb_float thickness){
+        if (thickness < 0) {
+            std::cout << "RockColumn::removeThickness Thickness of: " << thickness << std::endl;
+            throw std::invalid_argument("Invalid Thickness, must be >=0 and finite");
+        }
         wb_float remainingThickness = thickness;
         
         // remove starting from the top of the column

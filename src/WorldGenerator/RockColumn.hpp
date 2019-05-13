@@ -29,13 +29,14 @@ namespace WorldBuilder {
         wb_float get_thickness() const {return thickness;};
         void set_density(wb_float newDensity){
             if (!std::isnormal(newDensity) || newDensity < 0) {
+                std::cout << "Density of: " << newDensity << std::endl;
                 throw std::invalid_argument("Non-normal density");
             }
             density = newDensity;
         }
         void set_thickness(wb_float newThickness){
             if (!std::isfinite(newThickness) || newThickness < 0) {
-                std::cout << "Thicnkess of: " << newThickness;
+                std::cout << "Thicnkess of: " << newThickness << std::endl;
                 throw std::invalid_argument("Invalid Thickness, must be >=0 and finite");
             }
             thickness = newThickness;
