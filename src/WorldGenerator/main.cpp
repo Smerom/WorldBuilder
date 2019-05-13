@@ -100,7 +100,7 @@ public:
         WorldBuilder::SimulationRunner runner(new WorldBuilder::BombardmentGenerator(randomSource), new WorldBuilder::World(grid, randomSource, config));
         runner.set_runTimesteps(10);
         runner.set_runMinTimestep(0.05);
-        runner.shouldLogRunTiming = false;
+        runner.shouldLogRunTiming = true;
         runner.shouldLogRockDelta = false;
         
         bool open = true;
