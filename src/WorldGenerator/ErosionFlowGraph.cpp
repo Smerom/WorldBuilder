@@ -48,7 +48,7 @@ namespace WorldBuilder {
                 this->source->rock.sediment.set_thickness(0.95*fillAmount);
             } else {
                 // add self
-                waterVolume += this->source->precipitation * timestep;
+                waterVolume += this->source->precipitation * timestep * 0.3; // 30% precipitation as runnoff, random guess
                 wb_float sedThick = this->source->rock.sediment.get_thickness();
                 wb_float sedSuspended = 0;
                 if (elev - sedThick < sealevel - 300) {
@@ -64,6 +64,11 @@ namespace WorldBuilder {
                 // erode any bedrock
                 // only if downhill
                 if (this->downhillSlope > 0) {
+                    wb_float slope = this->downhillSlope;
+                    // max out water erosion slope
+                    if (slope > 0.25) {
+                        slope = 0.25;
+                    }
                     wb_float waterDepth = waterVolume * timestep;
                     // calculated capacity of amazon basin is: .002 meters of sediment per meter of water
                     // but how close to carrying capacity is that?
@@ -72,18 +77,18 @@ namespace WorldBuilder {
                     // calls for a K of 4500 if at capacity (for mf = 1, nf = 2)
                     // estimate twice that at 10^4
                     const wb_float capFactor = 10000;
-                    const wb_float rateFactor = 0.01 * capFactor;
+                    const wb_float rateFactor = 0.001 * capFactor;
 
                     // capacity is not timestep dependent (same function as rate)
-                    wb_float capacity = capFactor * waterDepth * this->downhillSlope * this->downhillSlope;
+                    wb_float capacity = capFactor * waterDepth * slope * slope;
 
                     // of remaining capacity:
                     
                     if (suspendedMaterial - capacity < 0 && capacity != 0) {
-                        wb_float capFrac = suspendedMaterial / capacity;
+                        wb_float waterFrac = waterDepth * suspendedMaterial / capacity;
                         // rate = constantFactor * (waterVolume)^mf * (downhillSlope)^nf
                         // TODO: should be exponential in timestep?
-                        wb_float rate = rateFactor * waterDepth * this->downhillSlope * this->downhillSlope;
+                        wb_float rate = rateFactor * std::sqrt(waterFrac) * slope ;
                         wb_float bedrockDepth = rate * timestep;
 
                         // erode?
@@ -108,6 +113,8 @@ namespace WorldBuilder {
             {
                 flowEdge->materialHeight = flowEdge->weight * suspendedMaterial*0.99;
                 totalMaterialMoved += flowEdge->weight * suspendedMaterial*0.99;
+                // move water with 20% evaporation
+                flowEdge->waterVolume = flowEdge->weight * waterVolume * 0.8;
             }
             
             
