@@ -81,7 +81,7 @@ namespace WorldBuilder {
         
         wb_float age;
         wb_float tempurature;
-        wb_float precipitation;
+        wb_float precipitation; // per million years
         
         
         PlateCell(const GridVertex* vertex);

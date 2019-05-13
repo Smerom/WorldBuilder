@@ -674,7 +674,8 @@ namespace WorldBuilder {
                 wb_float latitude = std::abs(math::piOverTwo - math::angleBetweenUnitVectors(plate->localToWorld(cell->get_vertex()->get_vector()), northPole));
                 // e^(-(x)^2/(2 *0.6^2))/(sqrt(2*π) * 0.6) + 1/20*e^(-(x - 5/9*pi/2)^2/(2 * 0.1^2))/(sqrt(2*π) * 0.1)
                 // simplifies to 0.199471 e^(-50. (0.872665 - x)^2) + 0.664904 e^(-1.38889 x^2)
-                cell->precipitation = 6.5*(0.199471 * std::exp(-50.0 * (0.872665 - latitude) * (0.872665 - latitude)) + 0.664904 * std::exp(-1.38889 * latitude * latitude));
+                wb_float yearlyPrecip = 6.5*(0.199471 * std::exp(-50.0 * (0.872665 - latitude) * (0.872665 - latitude)) + 0.664904 * std::exp(-1.38889 * latitude * latitude));
+                cell->precipitation = yearlyPrecip * 1000000; // per million years
             }
         }
     } // World::updatePrecipitation
@@ -942,25 +943,14 @@ namespace WorldBuilder {
     void World::erodeSedimentTransport(wb_float timestep){
         // sediment flow, does this want to be first???
         std::shared_ptr<MaterialFlowGraph> flowGraph = this->createFlowGraph(); // TODO don't create each phase, reuse the memory!
-        wb_float beforeTotal = flowGraph->totalMaterial();
         bool validWeights = flowGraph->checkWeights();
-        flowGraph->flowAll();
+        flowGraph->flowAll(this->attributes.sealevel, timestep);
         flowGraph->fillBasins();
-        wb_float afterTotal = flowGraph->totalMaterial();
         
         //std::cout << "Graph volume changed by " << std::scientific << afterTotal - beforeTotal << " and is " << afterTotal / beforeTotal << " of origional." << std::endl;
         
         //std::cout << "Orphaned material Out: " << std::scientific << flowGraph->inTransitOutMaterial() << " In: " << std::scientific << flowGraph->inTransitInMaterial() << std::endl;
         
-        // update sediment for each plate cell
-        for (auto&& plateIt : this->plates) {
-            std::shared_ptr<Plate>& plate = plateIt.second;
-            for (auto&& cellIt : plate->cells) {
-                std::shared_ptr<PlateCell>& cell = cellIt.second;
-                RockSegment sediment(cell->flowNode->get_materialHeight(), 2700);
-                cell->rock.sediment = sediment; // all sediment is tracked in the flow graph, not just what moved
-            }
-        }
     }
     
     // Creates a unified flow graph from the knit plates
@@ -978,8 +968,7 @@ namespace WorldBuilder {
         for (auto&& plateIt : this->plates) {
             for (auto&& cellIt : plateIt.second->cells) {
                 std::shared_ptr<PlateCell>& cell = cellIt.second;
-                graph->nodes[nodeIndex].set_materialHeight(cell->rock.sediment.get_thickness());
-                graph->nodes[nodeIndex].offsetHeight = cell->get_elevation() - graph->nodes[nodeIndex].get_materialHeight();
+                graph->nodes[nodeIndex].set_source(cell);
                 cell->flowNode = &graph->nodes[nodeIndex];
                 nodeIndex++;
             }
@@ -1057,22 +1046,8 @@ namespace WorldBuilder {
                             totalSquareElevationOut += candidateIt->second*candidateIt->second;
                         }
                         
-                        // determine suspended sediment
-                        wb_float x = largestHeightDifference / this->cellDistanceMeters;
-                        if (x < 0){
-                            x = 0;
-                            std::printf("negative grade!");
-                        }
-                        wb_float y = log(x+1);
-                        wb_float suspended = 15237.4 * y + 170378.0 * y * y;
-                        
-                        // TODO make not hacky! (ie, more smooth)
-                        if (suspended > largestHeightDifference) {
-                            suspended = largestHeightDifference;
-                        }
-                        
-                        // will only suspend up to the available material
-                        cell->flowNode->suspendMaterial(suspended);
+                        // determine downhill slope
+                        cell->flowNode->downhillSlope = largestHeightDifference / this->cellDistanceMeters;
                         
                         //
                         for (auto&& candidateIt : outflowCandidates) {
@@ -1100,23 +1075,7 @@ namespace WorldBuilder {
                         }
                         
                         // determine suspended sediment
-                        wb_float x = largestHeightDifference / this->cellDistanceMeters;
-                        if (x < 0){
-                            x = 0;
-                            std::printf("negative grade!");
-                        }
-                        wb_float y = log(x+1);
-                        // TODO modify target slope for under water
-                        wb_float suspended = 15237.4 * y + 170378.0 * y * y;
-                        
-                        // TODO make not hacky! (ie, more smooth)
-                        if (suspended > largestHeightDifference) {
-                            suspended = largestHeightDifference;
-                        }
-                        
-                        // hack lower
-                        suspended = suspended*0.25;
-                        cell->flowNode->suspendMaterial(suspended);
+                        cell->flowNode->downhillSlope = largestHeightDifference / this->cellDistanceMeters;
                         
                         //
                         for (auto&& candidateIt : outflowCandidates) {
@@ -1543,8 +1502,6 @@ namespace WorldBuilder {
         LocationInfo info;
         wb_float distWeight = 0;
         
-        // TODO linear interpolation
-        // simplest implementation, get the first closest cell we can find
         for (auto plateIt = this->plates.begin(); plateIt != this->plates.end(); plateIt++) {
             std::shared_ptr<Plate> plate = plateIt->second;
             
