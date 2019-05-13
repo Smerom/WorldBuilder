@@ -45,7 +45,7 @@ namespace WorldBuilder {
                     fillAmount = suspendedMaterial;
                 }
                 suspendedMaterial -= 0.95*fillAmount;
-                this->source->rock.sediment.set_thickness(0.95*fillAmount);
+                this->source->rock.sediment.set_thickness(0.95*fillAmount + this->source->rock.sediment.get_thickness());
             } else {
                 // add self
                 waterVolume += this->source->precipitation * timestep * 0.3; // 30% precipitation as runnoff, random guess
