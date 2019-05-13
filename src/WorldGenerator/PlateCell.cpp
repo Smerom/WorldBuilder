@@ -7,11 +7,6 @@
 #include "PlateCell.hpp"
 
 namespace WorldBuilder {
-    
-    wb_float PlateCell::get_elevation() const {
-        return this->baseOffset + this->rock.thickness();
-    }
-    
     // Removes thickness and combines into a single rock segement representing the resulting sediment
     RockSegment PlateCell::erodeThickness(wb_float thickness){
         RockColumn erodedRock = this->rock.removeThickness(thickness);

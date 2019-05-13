@@ -90,7 +90,9 @@ namespace WorldBuilder {
         // simple 
         void homeostasis(const WorldAttributes, wb_float timestep);
         
-        wb_float get_elevation() const;
+        wb_float get_elevation() const {
+            return this->baseOffset + this->rock.thickness();
+        }
         
         const GridVertex* get_vertex() const {
             return this->vertex;

@@ -68,7 +68,7 @@ namespace WorldBuilder {
 
                     // of remaining capacity:
                     
-                    if (capacity - suspendedMaterial > 0 && capacity != 0) {
+                    if (suspendedMaterial - capacity < 0 && capacity != 0) {
                         wb_float capFrac = suspendedMaterial / capacity;
                         // rate = constantFactor * (waterVolume)^mf * (downhillSlope)^nf
                         // TODO: should be exponential in timestep?
