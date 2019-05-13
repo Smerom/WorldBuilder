@@ -15,7 +15,7 @@
 #include <set>
 #include <queue>
 #include <iostream>
-#include "RockColumn.hpp"
+#include "PlateCell.hpp"
 
 namespace WorldBuilder {
     class FlowEdge;
