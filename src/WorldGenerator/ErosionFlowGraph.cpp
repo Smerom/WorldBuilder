@@ -11,6 +11,7 @@
 
 namespace WorldBuilder {
     
+    // const wb_float basinThicknessThreshold = 1000;
     
 /****************************** Material Flow Node ******************************/
 
@@ -125,7 +126,8 @@ namespace WorldBuilder {
         }
         wb_float total = 0;
         for (auto&& downhillEdge : this->outflowTargets) {
-            if (downhillEdge->weight < 0) {
+            if (downhillEdge->weight < 0 && std::isfinite(downhillEdge->weight)) {
+                std::cout << "Weight is: " << downhillEdge->weight << std::endl;
                 throw std::logic_error("Negative edge weight!");
             }
             total += downhillEdge->weight;
