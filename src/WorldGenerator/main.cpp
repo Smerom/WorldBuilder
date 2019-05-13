@@ -101,7 +101,7 @@ public:
         runner.set_runTimesteps(10);
         runner.set_runMinTimestep(0.05);
         runner.shouldLogRunTiming = true;
-        runner.shouldLogRockDelta = false;
+        runner.shouldLogRockDelta = true;
         
         bool open = true;
         while (open) {
