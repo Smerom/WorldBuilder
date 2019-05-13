@@ -9,12 +9,13 @@
 #define ErosionFlowGraph_hpp
 
 #include <vector>
-#include "Defines.h"
 #include <cmath>
 #include <unordered_set>
 #include <set>
 #include <queue>
 #include <iostream>
+
+#include "Defines.h"
 #include "PlateCell.hpp"
 
 namespace WorldBuilder {
