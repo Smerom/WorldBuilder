@@ -37,7 +37,7 @@ namespace WorldBuilder {
 
             // add self
             waterVolume += this->source->precipitation * timestep;
-            suspendedMaterial += this->source->rock.sediment.thickness;
+            suspendedMaterial += this->source->rock.sediment.get_thickness();
             this->source->rock.sediment.set_thickness(0);
             
             // if underwater, deposit on shelf
@@ -48,7 +48,7 @@ namespace WorldBuilder {
                     fillAmount = suspendedMaterial;
                 }
                 suspendedMaterial -= 0.95*fillAmount;
-                this->source->rock.sediment.setThickness(0.95*fillAmount);
+                this->source->rock.sediment.set_thickness(0.95*fillAmount);
             } else {
                 // erode any bedrock
                 // only if downhill
@@ -86,7 +86,7 @@ namespace WorldBuilder {
                     }
                 } else {
                     // deposit all?
-                    this->source->rock.sediment.set_thickness(sedimentHeight);
+                    this->source->rock.sediment.set_thickness(suspendedMaterial);
                     suspendedMaterial = 0;
                 }
             }
@@ -101,7 +101,7 @@ namespace WorldBuilder {
             
             
             // add back any missed material height
-            wb_float desiredThickness = this->source->rock.sediment.thickness + (suspendedMaterial - totalMaterialMoved);
+            wb_float desiredThickness = this->source->rock.sediment.get_thickness() + (suspendedMaterial - totalMaterialMoved);
             if (desiredThickness < 0) {
                 desiredThickness = 0;
             }

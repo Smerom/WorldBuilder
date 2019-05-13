@@ -81,7 +81,7 @@ namespace WorldBuilder {
         }
 
         void set_sedimentHeight(wb_float height) {
-            this->source->rock.sedment.set_thickness(height);
+            this->source->rock.sediment.set_thickness(height);
         }
         
         wb_float elevation() const{
