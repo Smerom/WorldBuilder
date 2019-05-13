@@ -443,7 +443,7 @@ namespace WorldBuilder {
         }
 
         // print knit stats for plate
-        std::cout << "Missing edges: " << offEdgeCount << " with other plate connections: " << connections << " Fraction: " << wb_float(connections) / wb_float(offEdgeCount) << std::endl;
+        //std::cout << "Missing edges: " << offEdgeCount << " with other plate connections: " << connections << " Fraction: " << wb_float(connections) / wb_float(offEdgeCount) << std::endl;
     }
     
     // renormalize plates and transfer rock from cells that are too thin
