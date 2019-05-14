@@ -13,11 +13,11 @@
 #include "RockColumn.hpp"
 #include "Grid.hpp"
 #include "Defines.h"
-#include "ErosionFlowGraph.hpp"
 
 namespace WorldBuilder {
     
     class PlateCell;
+    class MaterialFlowNode;
     /***************  Edge Cell Info ***************/
     /*  Additional info required for Plate Cells on the edge of a plate
      *
@@ -81,7 +81,7 @@ namespace WorldBuilder {
         
         wb_float age;
         wb_float tempurature;
-        wb_float precipitation;
+        wb_float precipitation; // per million years
         
         
         PlateCell(const GridVertex* vertex);
@@ -90,7 +90,9 @@ namespace WorldBuilder {
         // simple 
         void homeostasis(const WorldAttributes, wb_float timestep);
         
-        wb_float get_elevation() const;
+        wb_float get_elevation() const {
+            return this->baseOffset + this->rock.thickness();
+        }
         
         const GridVertex* get_vertex() const {
             return this->vertex;

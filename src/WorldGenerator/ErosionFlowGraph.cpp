@@ -11,6 +11,7 @@
 
 namespace WorldBuilder {
     
+    // const wb_float basinThicknessThreshold = 1000;
     
 /****************************** Material Flow Node ******************************/
 
@@ -18,36 +19,97 @@ namespace WorldBuilder {
         return left.elevation() < right.elevation();
     }
     
-    void MaterialFlowNode::upTreeFlow(){
+    void MaterialFlowNode::upTreeFlow(wb_float sealevel, wb_float timestep){
         if (this->touched == false) {
             // touch self (TODO: race condition!!!!!! comp swap it!)
             this->touched = true;
             
             // flow up
             wb_float suspendedMaterial = 0;
+            wb_float waterVolume = 0;
             for (auto&& flowEdge : this->inflowTargets)
             {
-                flowEdge->source->upTreeFlow();
+                flowEdge->source->upTreeFlow(sealevel, timestep);
                 // collect material
                 suspendedMaterial += flowEdge->materialHeight;
+                waterVolume += flowEdge->waterVolume;
                 flowEdge->materialHeight = 0;
             }
             
-            // TODO, move to specialized flow node
-            // TODO, dynamic sealevel
-            if (this->elevation() < 9620 - 300) {
+            // if underwater, deposit on shelf
+            wb_float elev = this->elevation();
+            if (elev < sealevel - 300) {
                 //
-                wb_float fillAmount = 9620 - 300 - this->elevation();
+                wb_float fillAmount = sealevel - 300 - this->elevation();
                 if (fillAmount > suspendedMaterial) {
                     fillAmount = suspendedMaterial;
                 }
                 suspendedMaterial -= 0.95*fillAmount;
-                this->materialHeight += 0.95*fillAmount;
+                this->source->rock.sediment.set_thickness(0.95*fillAmount + this->source->rock.sediment.get_thickness());
+            } else {
+                // add self
+                waterVolume += this->source->precipitation * timestep * 0.3; // 30% precipitation as runnoff, random guess
+                wb_float sedThick = this->source->rock.sediment.get_thickness();
+                wb_float sedSuspended = 0;
+                if (elev - sedThick < sealevel - 300) {
+                    sedSuspended = elev - sealevel + 300;
+                    sedThick = sedThick - sedSuspended;
+                } else {
+                    sedSuspended = sedThick;
+                    sedThick = 0;
+                }
+                suspendedMaterial += sedSuspended;
+                this->source->rock.sediment.set_thickness(sedThick);
+
+                // erode any bedrock
+                // only if downhill
+                if (this->downhillSlope > 0) {
+                    wb_float slope = this->downhillSlope;
+                    // max out water erosion slope
+                    if (slope > 0.25) {
+                        slope = 0.25;
+                    }
+                    wb_float waterDepth = waterVolume * timestep;
+                    // calculated capacity of amazon basin is: .002 meters of sediment per meter of water
+                    // but how close to carrying capacity is that?
+                    // 0.0006666666667 slope (244 meters of 366km)
+                    // 0.00000044444444444 squared slope?
+                    // calls for a K of 4500 if at capacity (for mf = 1, nf = 2)
+                    // estimate twice that at 10^4
+                    const wb_float capFactor = 10000;
+                    const wb_float rateFactor = 0.001 * capFactor;
+
+                    // capacity is not timestep dependent (same function as rate)
+                    wb_float capacity = capFactor * waterDepth * slope * slope;
+
+                    // of remaining capacity:
+                    
+                    if (suspendedMaterial - capacity < 0 && capacity != 0) {
+                        wb_float waterFrac = waterDepth * suspendedMaterial / capacity;
+                        // rate = constantFactor * (waterVolume)^mf * (downhillSlope)^nf
+                        // TODO: should be exponential in timestep?
+                        wb_float rate = rateFactor * std::sqrt(waterFrac) * slope;
+                        // cap the rate
+                        if (rate > 1000) {
+                            rate = 1000;
+                        }
+                        wb_float bedrockDepth = rate * timestep;
+
+                        // erode?
+                        auto rockSegmentEroded = this->source->erodeThickness(bedrockDepth);
+                        suspendedMaterial += rockSegmentEroded.get_thickness();
+                    } else {
+                        // deposit
+                        wb_float depositAmount = (suspendedMaterial - capacity);
+                        this->source->rock.sediment.set_thickness(depositAmount);
+                        suspendedMaterial -= depositAmount;
+                    }
+                } else {
+                    // deposit all?
+                    this->source->rock.sediment.set_thickness(suspendedMaterial);
+                    suspendedMaterial = 0;
+                }
             }
-            
-            // add material from self
-            suspendedMaterial += this->suspendedMaterialHeight;
-            this->suspendedMaterialHeight = 0;
             
             // move material
             wb_float totalMaterialMoved = 0;
@@ -55,15 +117,17 @@ namespace WorldBuilder {
             {
                 flowEdge->materialHeight = flowEdge->weight * suspendedMaterial*0.99;
                 totalMaterialMoved += flowEdge->weight * suspendedMaterial*0.99;
+                // move water with 20% evaporation
+                flowEdge->waterVolume = flowEdge->weight * waterVolume * 0.8;
             }
             
             
-            // remove material, suspended from this cell plus any discrepancy between suspended and total moved, if possible
-            wb_float desiredMaterialHeight = this->materialHeight + (suspendedMaterial - totalMaterialMoved);
-            if (desiredMaterialHeight < 0) {
-                desiredMaterialHeight = 0;
+            // add back any missed material height
+            wb_float desiredThickness = this->source->rock.sediment.get_thickness() + (suspendedMaterial - totalMaterialMoved);
+            if (desiredThickness < 0) {
+                desiredThickness = 0;
             }
-            this->set_materialHeight(desiredMaterialHeight);
+            this->source->rock.sediment.set_thickness(desiredThickness);
         } // end if touched
     }// MaterialFlowNode::upTreeFlow()
     
@@ -73,7 +137,8 @@ namespace WorldBuilder {
         }
         wb_float total = 0;
         for (auto&& downhillEdge : this->outflowTargets) {
-            if (downhillEdge->weight < 0) {
+            if (downhillEdge->weight < 0 && std::isfinite(downhillEdge->weight)) {
+                std::cout << "Weight is: " << downhillEdge->weight << std::endl;
                 throw std::logic_error("Negative edge weight!");
             }
             total += downhillEdge->weight;
@@ -277,35 +342,8 @@ namespace WorldBuilder {
         return true;
     }
     
-    wb_float MaterialFlowGraph::totalMaterial() const {
-        wb_float total = 0;
-        for (size_t index = 0; index < this->nodeCount; index++) {
-            total += this->nodes[index].get_materialHeight() + this->nodes[index].get_suspendedMaterialHeight();
-        }
-        return total;
-    }
     
-    wb_float MaterialFlowGraph::inTransitOutMaterial() const {
-        wb_float total = 0;
-        for (size_t index = 0; index < this->nodeCount; index++) {
-            for(auto&& outflowNode : this->nodes[index].outflowTargets){
-                total += outflowNode->get_materialHeight();
-            }
-        }
-        return total;
-    }
-    wb_float MaterialFlowGraph::inTransitInMaterial() const {
-        wb_float total = 0;
-        for (size_t index = 0; index < this->nodeCount; index++) {
-            for(auto&& inflowNode : this->nodes[index].inflowTargets){
-                total += inflowNode->get_materialHeight();
-            }
-        }
-        return total;
-    }
-    
-    
-    void MaterialFlowGraph::flowAll(){
+    void MaterialFlowGraph::flowAll(wb_float sealevel, wb_float timestep){
         // clear touched status
         for (size_t nodeIndex = 0; nodeIndex < this->nodeCount; nodeIndex++) {
             this->nodes[nodeIndex].touched = false;
@@ -314,7 +352,7 @@ namespace WorldBuilder {
         // flow entire graph, could be done from roots???
         for (size_t nodeIndex = 0; nodeIndex < this->nodeCount; nodeIndex++) {
             if (this->nodes[nodeIndex].touched == false) {
-                this->nodes[nodeIndex].upTreeFlow();
+                this->nodes[nodeIndex].upTreeFlow(sealevel, timestep);
             }
         }
     } // MaterialFlowGraph::flowAll()
@@ -326,11 +364,11 @@ namespace WorldBuilder {
             if (node.outflowTargets.size() == 0) {
                 // create a basin with this node
                 
-                MaterialFlowBasin* basin = new MaterialFlowBasin(node.elevation() - node.get_materialHeight(), node.get_materialHeight(), &node);
+                MaterialFlowBasin* basin = new MaterialFlowBasin(node.elevation() - node.sedimentHeight(), node.sedimentHeight(), &node);
                 this->activeBasins.push(basin);
                 
                 // all material is moved to the basin
-                node.set_materialHeight(0);
+                node.set_sedimentHeight(0);
             }
         }
         
@@ -397,7 +435,7 @@ namespace WorldBuilder {
         for(auto&& node : this->nodes) {
             if (node.get_basin() != nullptr) {
                 if (node.elevation() <= node.get_basin()->elevation()) {
-                    node.set_materialHeight(node.get_materialHeight() + node.get_basin()->elevation() - node.elevation());
+                    node.set_sedimentHeight(node.sedimentHeight() + node.get_basin()->elevation() - node.elevation());
                 } else {
                     //throw std::logic_error("node above basin height");
                 }

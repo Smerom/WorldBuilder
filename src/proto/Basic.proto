@@ -31,6 +31,13 @@ message Grid {
 message Initialization {
 
     double waterDepth = 4; // linear volume (total height)
+    uint32 seed = 5; // zero for random
+}
+
+message TimedTask {
+    string name = 1;
+    int64 duration = 2;
+    repeated TimedTask subTasks = 3;
 }
 
 message SimulationInfo {
@@ -42,6 +49,7 @@ message SimulationInfo {
     repeated float tempurature = 8;
     repeated float precipitation = 9;
     float sealevel = 10;
+    repeated TimedTask roundTimings = 11;
 }
 
 service WorldBuilder {

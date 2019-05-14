@@ -73,11 +73,6 @@ namespace WorldBuilder {
                 wb_float craterRadius = impactRadius * theWorld->get_attributes().radius*1000;
                 
                 RockColumn materialEjected;
-                RockSegment zeroSegment(0,1);
-                materialEjected.sediment = zeroSegment;
-                materialEjected.continental = zeroSegment;
-                materialEjected.oceanic = zeroSegment;
-                materialEjected.root = zeroSegment;
                 
                 // TODO, MAKE BETER!
                 size_t tilesWithin = 0;

@@ -9,12 +9,14 @@
 #define ErosionFlowGraph_hpp
 
 #include <vector>
-#include "Defines.h"
 #include <cmath>
 #include <unordered_set>
 #include <set>
 #include <queue>
 #include <iostream>
+
+#include "Defines.h"
+#include "PlateCell.hpp"
 
 namespace WorldBuilder {
     class FlowEdge;
@@ -29,9 +31,11 @@ namespace WorldBuilder {
     private:
         MaterialFlowNode* source;
         MaterialFlowNode* destination;
+        wb_float waterVolume;
         wb_float weight;
         wb_float materialHeight;
     public:
+        FlowEdge() : source(nullptr), destination(nullptr), waterVolume(0), weight(0), materialHeight(0){};
         wb_float get_materialHeight() {
             return materialHeight;
         }
@@ -44,12 +48,12 @@ namespace WorldBuilder {
      *
      */
     class MaterialFlowNode {
-        wb_float materialHeight;
-        wb_float suspendedMaterialHeight;
+        std::shared_ptr<PlateCell> source;
         MaterialFlowBasin* basin;
     public:
+        wb_float downhillSlope;
         
-        MaterialFlowNode() : materialHeight(0), suspendedMaterialHeight(0), basin(nullptr), touched(false), offsetHeight(0){};
+        MaterialFlowNode() : source(nullptr), basin(nullptr), downhillSlope(0), touched(false), offsetHeight(0){};
         
         std::vector<std::shared_ptr<FlowEdge>> outflowTargets;
         std::vector<std::shared_ptr<FlowEdge>> inflowTargets;
@@ -61,35 +65,9 @@ namespace WorldBuilder {
         
         uint32_t plateIndex;
         uint32_t cellIndex;
-        
-        // TODO rename, does not suspend additional material, but sets the amount of suspended material out of the total
-        void suspendMaterial(wb_float height) {
-            if (!std::isfinite(height) || height < 0) {
-                throw std::invalid_argument("Suspension height must be positive and finite");
-            }
-            // convert all to normal material
-            set_materialHeight(materialHeight + suspendedMaterialHeight);
-            // modify height if needed
-            if (height > materialHeight) {
-                height = materialHeight;
-            }
-            // suspend the material
-            suspendedMaterialHeight = height;
-            set_materialHeight(materialHeight - height);
-        }
-        
-        wb_float get_materialHeight() const {
-            return materialHeight;
-        }
-        void set_materialHeight(wb_float height) {
-            if (!std::isfinite(height) || height < 0) {
-                throw std::invalid_argument("Height must be positive and finite");
-            }
-            materialHeight = height;
-        }
-        
-        wb_float get_suspendedMaterialHeight() const{
-            return suspendedMaterialHeight;
+
+        void set_source(std::shared_ptr<PlateCell> s) {
+            this->source = s;
         }
         
         MaterialFlowBasin* get_basin() const {
@@ -98,9 +76,17 @@ namespace WorldBuilder {
         void set_basin(MaterialFlowBasin* newBasin) {
             this->basin = newBasin;
         }
+
+        wb_float sedimentHeight() const {
+            return this->source->rock.sediment.get_thickness();
+        }
+
+        void set_sedimentHeight(wb_float height) {
+            this->source->rock.sediment.set_thickness(height);
+        }
         
         wb_float elevation() const{
-            return materialHeight + offsetHeight + suspendedMaterialHeight; // include suspended material in elevation as it is effectively part of the cell when not flowing the graph
+            return this->source->get_elevation(); // include suspended material in elevation as it is effectively part of the cell when not flowing the graph
         }
 
         void log() const {
@@ -115,7 +101,7 @@ namespace WorldBuilder {
         bool checkWeight() const;
         
         //void touchConnectedSubgraph(); // for finding roots if I end up doing that
-        void upTreeFlow();
+        void upTreeFlow(wb_float sealevel, wb_float timestep);
         
         MaterialFlowBasin* downhillBasin() const;
     };
@@ -217,13 +203,8 @@ namespace WorldBuilder {
             }
         }
         
-        void flowAll();
+        void flowAll(wb_float sealevel, wb_float timestep);
         void fillBasins();
-        
-        wb_float totalMaterial() const;
-        
-        wb_float inTransitOutMaterial() const;
-        wb_float inTransitInMaterial() const;
         
         bool checkWeights() const;
         
