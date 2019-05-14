@@ -24,6 +24,8 @@ public:
 
     std::weak_ptr<PlateCell> lastCell;
     std::weak_ptr<Plate> lastPlate;
+
+    VolcanicHotspot() : weight(0), normWeight(0){};
     
 };
     

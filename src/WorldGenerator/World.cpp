@@ -675,6 +675,9 @@ namespace WorldBuilder {
                 // e^(-(x)^2/(2 *0.6^2))/(sqrt(2*π) * 0.6) + 1/20*e^(-(x - 5/9*pi/2)^2/(2 * 0.1^2))/(sqrt(2*π) * 0.1)
                 // simplifies to 0.199471 e^(-50. (0.872665 - x)^2) + 0.664904 e^(-1.38889 x^2)
                 wb_float yearlyPrecip = 6.5*(0.199471 * std::exp(-50.0 * (0.872665 - latitude) * (0.872665 - latitude)) + 0.664904 * std::exp(-1.38889 * latitude * latitude));
+                if (!std::isnormal(yearlyPrecip)) {
+                    throw std::domain_error("Bad precipitation");
+                }
                 cell->precipitation = yearlyPrecip * 1000000; // per million years
             }
         }
