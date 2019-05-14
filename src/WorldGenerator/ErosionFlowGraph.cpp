@@ -88,7 +88,11 @@ namespace WorldBuilder {
                         wb_float waterFrac = waterDepth * suspendedMaterial / capacity;
                         // rate = constantFactor * (waterVolume)^mf * (downhillSlope)^nf
                         // TODO: should be exponential in timestep?
-                        wb_float rate = rateFactor * std::sqrt(waterFrac) * slope ;
+                        wb_float rate = rateFactor * std::sqrt(waterFrac) * slope;
+                        // cap the rate
+                        if (rate > 1000) {
+                            rate = 1000;
+                        }
                         wb_float bedrockDepth = rate * timestep;
 
                         // erode?
