@@ -31,6 +31,7 @@ message Grid {
 message Initialization {
 
     double waterDepth = 4; // linear volume (total height)
+    uint32 seed = 5; // zero for random
 }
 
 message TimedTask {

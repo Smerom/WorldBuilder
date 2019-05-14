@@ -92,8 +92,12 @@ public:
         
         std::random_device rd;
         // TODO: add seed to initialization
-        uint seed = 3743686141; // current test seed
-        //uint seed = rd(); // get a random seed
+        uint seed = 0;
+        if (init.seed() != 0) {
+            seed = init.seed();
+        } else {
+            seed = rd();
+        }
         std::printf("Random Seed: %u\n", seed);
         // create the generator
         std::shared_ptr<WorldBuilder::Random> randomSource(new WorldBuilder::Random(seed));
