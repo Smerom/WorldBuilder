@@ -184,18 +184,18 @@ namespace WorldBuilder {
         this->processAllHotspots(timestep);
         
         // thermal first
-        // RockColumn initial, final;
-        // initial = this->netRock();
+        RockColumn initial, final;
+        initial = this->netRock();
         this->erodeThermalSmoothing(timestep);
-        // final = this->netRock();
-        // std::cout << " Change after thermal erosion: " << std::endl;
-        // logColumnChange(initial, final, false, false);
+        final = this->netRock();
+        std::cout << " Change after thermal erosion: " << std::endl;
+        logColumnChange(initial, final, false, false);
         
-        // initial = final;
+        initial = final;
         this->erodeSedimentTransport(timestep);
-        // final = this->netRock();
-        // std::cout << "Change after sediment transport: " << std::endl;
-        // logColumnChange(initial, final, false, false);
+        final = this->netRock();
+        std::cout << "Change after sediment transport: " << std::endl;
+        logColumnChange(initial, final, false, false);
     }
     
 /****************************** Transistion ******************************/
