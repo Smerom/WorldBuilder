@@ -650,6 +650,7 @@ namespace WorldBuilder {
             for (auto&& cellIt : plate->cells) {
                 auto cell = cellIt.second;
                 wb_float latitude = std::abs(math::piOverTwo - math::angleBetweenUnitVectors(plate->localToWorld(cell->get_vertex()->get_vector()), northPole));
+                // TODO: handle nan lat
                 wb_float elevation = cell->get_elevation() - this->attributes.sealevel;
                 if (elevation < 0) {
                     elevation = 0;
@@ -672,13 +673,13 @@ namespace WorldBuilder {
             for (auto&& cellIt : plate->cells) {
                 auto cell = cellIt.second;
                 wb_float latitude = std::abs(math::piOverTwo - math::angleBetweenUnitVectors(plate->localToWorld(cell->get_vertex()->get_vector()), northPole));
+                if (!std::isfinite(latitude)) {
+                    // probably one of the poles
+                    latitude = math::piOverTwo;
+                }
                 // e^(-(x)^2/(2 *0.6^2))/(sqrt(2*π) * 0.6) + 1/20*e^(-(x - 5/9*pi/2)^2/(2 * 0.1^2))/(sqrt(2*π) * 0.1)
                 // simplifies to 0.199471 e^(-50. (0.872665 - x)^2) + 0.664904 e^(-1.38889 x^2)
                 wb_float yearlyPrecip = 6.5*(0.199471 * std::exp(-50.0 * (0.872665 - latitude) * (0.872665 - latitude)) + 0.664904 * std::exp(-1.38889 * latitude * latitude));
-                if (!std::isnormal(yearlyPrecip)) {
-                    std::cout << "Vector is: " <<  plate->localToWorld(cell->get_vertex()->get_vector()).coords[0] << ", " << plate->localToWorld(cell->get_vertex()->get_vector()).coords[1] << ", " << plate->localToWorld(cell->get_vertex()->get_vector()).coords[2] << std::endl;
-                    throw std::domain_error("Bad precipitation");
-                }
                 cell->precipitation = yearlyPrecip * 1000000; // per million years
             }
         }
@@ -1158,6 +1159,7 @@ namespace WorldBuilder {
                 Vec3 locationInLocal = math::affineRotaionMulVec(math::transpose(plate->rotationMatrix), hotspot->worldLocation);
                 wb_float dist = math::distanceBetween3Points(locationInLocal, plate->center) * this->attributes.radius;
                 // make config! (in km)
+                // TODO: handle nan distance
                 if (dist < 150){
                     validOutflow = true;
                     validCells.push_back(cell);
