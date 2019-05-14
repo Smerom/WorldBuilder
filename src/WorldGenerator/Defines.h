@@ -29,6 +29,8 @@ namespace WorldBuilder {
         wb_float sealevel;
         wb_float waterDensity;
         wb_float cellArea; // km^2
+
+        WorldAttributes() : mantleDensity(0), radius(0), totalSeaDepth(0), sealevel(0), waterDensity(0), cellArea(0){};
     };
     
 /*************** World Step time tracking ***************/
@@ -55,6 +57,8 @@ namespace WorldBuilder {
         TaskTracker modification;
         
         wb_float timestepUsed;
+
+        WorldUpdateTask() : timestepUsed(0){};
     };
 }
 
