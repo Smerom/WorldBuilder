@@ -1057,7 +1057,7 @@ namespace WorldBuilder {
                                 throw "Source and cell are the same";
                             }
                             wb_float heightDifference = candidateIt.second;
-                            std::shared_ptr<FlowEdge> edge = std::make_shared<FlowEdge>(FlowEdge{});
+                            std::shared_ptr<FlowEdge> edge = std::make_shared<FlowEdge>();
                             edge->destination = candidateIt.first;
                             edge->source = cell->flowNode;
                             edge->materialHeight = 0; // none moved yet
@@ -1085,7 +1085,7 @@ namespace WorldBuilder {
                                 throw "Source and cell are the same";
                             }
                             wb_float heightDifference = candidateIt.second;
-                            std::shared_ptr<FlowEdge> edge = std::make_shared<FlowEdge>(FlowEdge{});
+                            std::shared_ptr<FlowEdge> edge = std::make_shared<FlowEdge>();
                             edge->destination = candidateIt.first;
                             edge->source = cell->flowNode;
                             edge->materialHeight = 0; // none moved yet
