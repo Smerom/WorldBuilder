@@ -676,6 +676,7 @@ namespace WorldBuilder {
                 // simplifies to 0.199471 e^(-50. (0.872665 - x)^2) + 0.664904 e^(-1.38889 x^2)
                 wb_float yearlyPrecip = 6.5*(0.199471 * std::exp(-50.0 * (0.872665 - latitude) * (0.872665 - latitude)) + 0.664904 * std::exp(-1.38889 * latitude * latitude));
                 if (!std::isnormal(yearlyPrecip)) {
+                    std::cout << "Vector is: " <<  plate->localToWorld(cell->get_vertex()->get_vector()).coords[0] << ", " << plate->localToWorld(cell->get_vertex()->get_vector()).coords[1] << ", " << plate->localToWorld(cell->get_vertex()->get_vector()).coords[2] << std::endl;
                     throw std::domain_error("Bad precipitation");
                 }
                 cell->precipitation = yearlyPrecip * 1000000; // per million years
