@@ -77,7 +77,7 @@ namespace WorldBuilder {
         std::shared_ptr<EdgeCellInfo> edgeInfo; // shared with edge list
         std::shared_ptr<DisplacementInfo> displacement;
         
-        MaterialFlowNode* flowNode;
+        
         
         wb_float age;
         wb_float tempurature;
