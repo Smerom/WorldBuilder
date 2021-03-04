@@ -1822,7 +1822,7 @@ namespace WorldBuilder
             }
         }
 
-        if distWeight == 0 {
+        if (distWeight == 0) {
             std::cout << "distance weight is zero, no cells cast to?" << std::endl;
         }
 
