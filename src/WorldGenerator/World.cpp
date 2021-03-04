@@ -1822,6 +1822,10 @@ namespace WorldBuilder
             }
         }
 
+        if distWeight == 0 {
+            std::cout << "distance weight is zero, no cells cast to?" << std::endl;
+        }
+
         info.elevation = info.elevation / distWeight;
         info.sediment = info.sediment / distWeight;
         info.tempurature = info.tempurature / distWeight;
