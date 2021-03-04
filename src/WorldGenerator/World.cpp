@@ -566,10 +566,20 @@ namespace WorldBuilder {
                     moveColumn.root.set_density(cell->displacement->displacedRock.root.get_density());
                     
                     // set thicknesses
-                    moveColumn.sediment.set_thickness(cell->displacement->displacedRock.sediment.get_thickness() * (destinationWeight / totalWeight));
-                    moveColumn.continental.set_thickness(cell->displacement->displacedRock.continental.get_thickness() * (destinationWeight / totalWeight));
-                    moveColumn.oceanic.set_thickness(cell->displacement->displacedRock.oceanic.get_thickness() * (destinationWeight / totalWeight));
-                    moveColumn.root.set_thickness(cell->displacement->displacedRock.root.get_thickness() * (destinationWeight / totalWeight));
+                    try
+                    {
+                        moveColumn.sediment.set_thickness(cell->displacement->displacedRock.sediment.get_thickness() * (destinationWeight / totalWeight));
+                        moveColumn.continental.set_thickness(cell->displacement->displacedRock.continental.get_thickness() * (destinationWeight / totalWeight));
+                        moveColumn.oceanic.set_thickness(cell->displacement->displacedRock.oceanic.get_thickness() * (destinationWeight / totalWeight));
+                        moveColumn.root.set_thickness(cell->displacement->displacedRock.root.get_thickness() * (destinationWeight / totalWeight));
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << "in plate normalization" << e.what() << '\n';
+                        throw e
+                    }
+                    
+                    
                     
                     // combine with destination
                     destinationCell->rock = accreteColumns(destinationCell->rock, moveColumn);

@@ -45,7 +45,15 @@ namespace WorldBuilder {
                     fillAmount = suspendedMaterial;
                 }
                 suspendedMaterial -= 0.95*fillAmount;
-                this->source->rock.sediment.set_thickness(0.95*fillAmount + this->source->rock.sediment.get_thickness());
+                try
+                {
+                    this->source->rock.sediment.set_thickness(0.95*fillAmount + this->source->rock.sediment.get_thickness());
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << "in self deposition" << e.what() << '\n';
+                    throw e
+                }
             } else {
                 // add self
                 waterVolume += this->source->precipitation * timestep * 0.3; // 30% precipitation as runnoff, random guess
@@ -59,8 +67,15 @@ namespace WorldBuilder {
                     sedThick = 0;
                 }
                 suspendedMaterial += sedSuspended;
-                this->source->rock.sediment.set_thickness(sedThick);
-
+                try
+                {
+                    this->source->rock.sediment.set_thickness(sedThick);
+                }
+                catch(const std::exception& e)
+                {
+                    std::cerr << "in self suspension" << e.what() << '\n';
+                    throw e
+                }
                 // erode any bedrock
                 // only if downhill
                 if (this->downhillSlope > 0) {
@@ -101,12 +116,28 @@ namespace WorldBuilder {
                     } else {
                         // deposit
                         wb_float depositAmount = (suspendedMaterial - capacity);
-                        this->source->rock.sediment.set_thickness(depositAmount);
+                        try
+                        {
+                            this->source->rock.sediment.set_thickness(depositAmount);
+                        }
+                        catch(const std::exception& e)
+                        {
+                            std::cerr << "slope deposition" << e.what() << '\n';
+                            throw e
+                        }
                         suspendedMaterial -= depositAmount;
                     }
                 } else {
                     // deposit all?
-                    this->source->rock.sediment.set_thickness(suspendedMaterial);
+                    try
+                    {
+                        this->source->rock.sediment.set_thickness(suspendedMaterial);
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << "deposit all" << e.what() << '\n';
+                        throw e
+                    }
                     suspendedMaterial = 0;
                 }
             }
@@ -127,7 +158,16 @@ namespace WorldBuilder {
             if (desiredThickness < 0) {
                 desiredThickness = 0;
             }
-            this->source->rock.sediment.set_thickness(desiredThickness);
+            try
+            {
+                this->source->rock.sediment.set_thickness(desiredThickness);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << "missing material added back" << e.what() << '\n';
+                throw e
+            }
+            
         } // end if touched
     }// MaterialFlowNode::upTreeFlow()
     
