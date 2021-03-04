@@ -40,7 +40,7 @@ namespace WorldBuilder {
             wb_float elev = this->elevation();
             if (elev < sealevel - 300) {
                 //
-                wb_float fillAmount = sealevel - 300 - this->elevation();
+                wb_float fillAmount = sealevel - 300 - elev;
                 if (fillAmount > suspendedMaterial) {
                     fillAmount = suspendedMaterial;
                 }
