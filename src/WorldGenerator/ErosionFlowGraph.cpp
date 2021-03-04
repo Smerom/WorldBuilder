@@ -52,7 +52,7 @@ namespace WorldBuilder {
                 catch(const std::exception& e)
                 {
                     std::cerr << "in self deposition" << e.what() << '\n';
-                    throw e
+                    throw e;
                 }
             } else {
                 // add self
@@ -74,7 +74,7 @@ namespace WorldBuilder {
                 catch(const std::exception& e)
                 {
                     std::cerr << "in self suspension" << e.what() << '\n';
-                    throw e
+                    throw e;
                 }
                 // erode any bedrock
                 // only if downhill
@@ -123,7 +123,7 @@ namespace WorldBuilder {
                         catch(const std::exception& e)
                         {
                             std::cerr << "slope deposition" << e.what() << '\n';
-                            throw e
+                            throw e;
                         }
                         suspendedMaterial -= depositAmount;
                     }
@@ -136,7 +136,7 @@ namespace WorldBuilder {
                     catch(const std::exception& e)
                     {
                         std::cerr << "deposit all" << e.what() << '\n';
-                        throw e
+                        throw e;
                     }
                     suspendedMaterial = 0;
                 }
@@ -165,7 +165,7 @@ namespace WorldBuilder {
             catch(const std::exception& e)
             {
                 std::cerr << "missing material added back" << e.what() << '\n';
-                throw e
+                throw e;
             }
             
         } // end if touched

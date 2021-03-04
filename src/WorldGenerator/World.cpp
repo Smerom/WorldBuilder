@@ -576,7 +576,7 @@ namespace WorldBuilder {
                     catch(const std::exception& e)
                     {
                         std::cerr << "in plate normalization" << e.what() << '\n';
-                        throw e
+                        throw e;
                     }
                     
                     
