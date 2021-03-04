@@ -1784,7 +1784,7 @@ namespace WorldBuilder
                     // don't weight by more than 100
                     if (!std::isfinite(weight) || weight > 100)
                     {
-                        weight = 100
+                        weight = 100;
                     }
                     distWeight += weight;
 
@@ -1805,7 +1805,7 @@ namespace WorldBuilder
                         wb_float weight = 1 / math::distanceBetween3Points(locationInLocal, neighborIt->second->get_vertex()->get_vector());
                         if (!std::isfinite(weight) || weight > 100)
                         {
-                            weight = 100
+                            weight = 100;
                         }
                         if (weight > 1 / this->cellSmallAngle)
                         {
