@@ -78,6 +78,6 @@ namespace WorldBuilder {
         }
     }
     
-    PlateCell::PlateCell(const GridVertex *ourVertex) : bIsSubducted(false), vertex(ourVertex), edgeInfo(nullptr), displacement(nullptr), age(0), tempurature(0), precipitation(0) {
+    PlateCell::PlateCell(const GridVertex *ourVertex) : bIsSubducted(false), vertex(ourVertex), edgeInfo(nullptr), displacement(nullptr), flowNode(nullptr), age(0), tempurature(0), precipitation(0) {
     }
 }
