@@ -67,7 +67,7 @@ namespace WorldBuilder {
         // harden any sediment over 3k meters
         // TODO add timestep depencency
         if (this->rock.sediment.get_thickness() > 3000) {
-            wb_float timeFactor = std::min(1.0, 0.25*timestep)
+            wb_float timeFactor = std::min(1.0, 0.25*timestep);
             wb_float thicknessToHarden = (this->rock.sediment.get_thickness() - 3000)*timeFactor;
             //float massHardened = this->rock.sediment.density * thicknessToHarden;
             this->rock.sediment.set_thickness(this->rock.sediment.get_thickness() - thicknessToHarden);
@@ -78,6 +78,6 @@ namespace WorldBuilder {
         }
     }
     
-    PlateCell::PlateCell(const GridVertex *ourVertex) : bIsSubducted(false), vertex(ourVertex), edgeInfo(nullptr), displacement(nullptr), flowNode(nullptr), age(0), tempurature(0), precipitation(0) {
+    PlateCell::PlateCell(const GridVertex *ourVertex) : bIsSubducted(false), vertex(ourVertex), edgeInfo(nullptr), displacement(nullptr), age(0), tempurature(0), precipitation(0) {
     }
 }
